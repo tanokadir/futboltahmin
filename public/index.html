@@ -374,8 +374,9 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'DM
   <div class="rt" id="rTitle"></div>
   <div class="ra" id="rAnswer"></div>
   <div class="rp" id="rPts"></div>
+  <div id="autoNextMsg" style="font-size:.8rem;color:var(--muted);margin-top:4px;"></div>
   <div class="rbtns">
-    <button class="bn" onclick="nextRound()">SONRAKI &#9658;</button>
+    <button class="bn" id="nextRoundBtn" onclick="nextRound()">SONRAKI &#9658;</button>
     <button class="bm" onclick="endGame()">Bitir</button>
   </div>
 </div>
@@ -610,6 +611,13 @@ function pickPlayer() {
 }
 
 function loadRound() {
+  // Tur counter
+  var _tc = document.getElementById('turCounter');
+  var _tn = document.getElementById('turNum');
+  var _tm = document.getElementById('turMax');
+  if (_tc) _tc.style.display = 'block';
+  if (_tn) _tn.textContent = roundsPlayed + 1;
+  if (_tm) _tm.textContent = ROUNDS;
   // Pick player
   curPlayer = pickPlayer();
   clues = buildClues(curPlayer);
@@ -975,8 +983,29 @@ function showResult(win, winnerIdx, pts) {
   show('resultScreen');
 }
 
+var autoNextTimer = null;
+function startAutoNext(sec) {
+  clearInterval(autoNextTimer);
+  var msg = document.getElementById('autoNextMsg');
+  if (msg) msg.textContent = sec + ' saniyede otomatik geciyor...';
+  var left = sec;
+  autoNextTimer = setInterval(function() {
+    left--;
+    if (left <= 0) {
+      clearInterval(autoNextTimer);
+      if (msg) msg.textContent = '';
+      nextRound();
+    } else {
+      if (msg) msg.textContent = left + ' saniyede otomatik geciyor...';
+    }
+  }, 1000);
+}
+
 function nextRound() {
+  clearInterval(autoNextTimer);
   clearInterval(timerInt);
+  var msg = document.getElementById('autoNextMsg');
+  if (msg) msg.textContent = '';
   roundsPlayed++;
   if (roundsPlayed >= ROUNDS) {
     showFinal();
@@ -1235,12 +1264,13 @@ function bindSocketEvents() {
   socket.on('round_result', function(data) {
     clearInterval(timerInt);
     onlinePlayers = data.players;
-    // Update scores display
     for (var _i = 0; _i < Math.min(onlinePlayers.length, 2); _i++) {
       var sc = document.getElementById('mpts' + _i);
       if (sc) sc.textContent = onlinePlayers[_i].score;
     }
     showOnlineResult(data);
+    // Auto-next: host triggers after 3 sec, guest just sees countdown
+    startAutoNext(3);
   });
 
   socket.on('game_final', function(data) {
@@ -1317,6 +1347,13 @@ function setupOnlineGame(data) {
     if (pzn) pzn.textContent = p.name;
   }
 
+  // Tur counter
+  var tc = document.getElementById('turCounter');
+  var tn = document.getElementById('turNum');
+  var tm = document.getElementById('turMax');
+  if (tc) tc.style.display = 'block';
+  if (tn) tn.textContent = roundsPlayed + 1;
+  if (tm) tm.textContent = ROUNDS;
   // Clues
   renderClues();
   renderHintDots();
@@ -1393,29 +1430,28 @@ function showOnlineResult(data) {
 
   // Replace result buttons for online
   var rbtns = document.querySelector('#resultScreen .rbtns');
+  rbtns.innerHTML = '';
   if (isHost) {
-    rbtns.innerHTML = '';
     var b1 = document.createElement('button');
-    b1.className = 'bn'; b1.innerHTML = 'SONRAKI &#9658;';
+    b1.className = 'bn'; b1.id = 'nextRoundBtn'; b1.innerHTML = 'SONRAKI &#9658;';
     b1.onclick = onlineNext;
     var b2 = document.createElement('button');
     b2.className = 'bm'; b2.textContent = 'Bitir';
     b2.onclick = goMenu;
     rbtns.appendChild(b1); rbtns.appendChild(b2);
   } else {
-    rbtns.innerHTML = '';
-    var msg = document.createElement('div');
-    msg.style.cssText = 'color:var(--muted);font-size:.85rem;';
-    msg.textContent = 'Host sonraki turu baslatacak...';
     var b2 = document.createElement('button');
     b2.className = 'bm'; b2.textContent = 'Ayril';
     b2.onclick = goMenu;
-    rbtns.appendChild(msg); rbtns.appendChild(b2);
+    rbtns.appendChild(b2);
   }
   show('resultScreen');
 }
 
 function onlineNext() {
+  clearInterval(autoNextTimer);
+  var msg = document.getElementById('autoNextMsg');
+  if (msg) msg.textContent = '';
   socket.emit('next_round');
 }
 
