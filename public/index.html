@@ -547,8 +547,8 @@ document.getElementById('bestDisp').textContent = best;
 function selMode(m) {
   gameMode = m;
   document.getElementById('mc1').classList.toggle('sel', m === 'solo');
-  document.getElementById('mc2').classList.toggle('sel', m === 'multi');
-  document.getElementById('nsec').classList.toggle('show', m === 'multi');
+  document.getElementById('mc2').classList.toggle('sel', false);
+  document.getElementById('nsec').classList.remove('show');
 }
 
 function startGame() {
@@ -594,10 +594,10 @@ function loadRound() {
 
   if (gameMode === 'solo') {
     // Show/hide bars
-    document.getElementById('soloBar').style.display = 'flex';
+    var _sb = document.getElementById('soloBar'); if(_sb) _sb.style.display = 'flex';
     document.getElementById('multiBar').classList.remove('show');
     document.getElementById('timerWrap').classList.remove('show');
-    document.getElementById('soloInput').style.display = 'block';
+    var _si = document.getElementById('soloInput'); if(_si) _si.style.display = 'block';
     document.getElementById('dualInput').classList.remove('show');
     // Update HUD
     document.getElementById('soloScore').textContent = scores[0];
@@ -609,22 +609,22 @@ function loadRound() {
     document.getElementById('hintBtn').textContent = 'Ipucu Ac (4 kaldi)';
   } else {
     // Multi setup
-    document.getElementById('soloBar').style.display = 'none';
+    var _sb2 = document.getElementById('soloBar'); if(_sb2) _sb2.style.display = 'none';
     document.getElementById('multiBar').classList.add('show');
     document.getElementById('timerWrap').classList.add('show');
-    document.getElementById('soloInput').style.display = 'none';
+    var _si2 = document.getElementById('soloInput'); if(_si2) _si2.style.display = 'none';
     document.getElementById('dualInput').classList.add('show');
     // Names & scores
     for (var i = 0; i < 2; i++) {
       document.getElementById('mname' + i).textContent = pNames[i];
-      document.getElementById('mpts' + i).textContent = scores[i];
-      document.getElementById('pzname' + i).textContent = pNames[i];
-      document.getElementById('minput' + i).value = '';
-      document.getElementById('minput' + i).disabled = false;
-      document.getElementById('mbtn' + i).disabled = false;
-      document.getElementById('mbtn' + i).style.opacity = '1';
-      document.getElementById('pstatus' + i).textContent = '';
-      document.getElementById('pguess' + i).textContent = '5 tahmin hakki';
+      var _sc = document.getElementById('mpts' + i); if(_sc) _sc.textContent = scores[i];
+      var _pz = document.getElementById('pzname' + i); if(_pz) _pz.textContent = pNames[i];
+      var _inp = document.getElementById('minput' + i);
+      if(_inp) { _inp.value = ''; _inp.disabled = false; }
+      var _btn = document.getElementById('mbtn' + i);
+      if(_btn) { _btn.disabled = false; _btn.style.opacity = '1'; }
+      var _st = document.getElementById('pstatus' + i); if(_st) _st.textContent = '';
+      var _gs = document.getElementById('pguess' + i); if(_gs) _gs.textContent = '5 tahmin hakki';
       setupMSearch(i);
     }
     startTimer();
@@ -695,7 +695,7 @@ function startTimer() {
 function updateTimerUI() {
   var n = document.getElementById('timerNum');
   var f = document.getElementById('timerFill');
-  if (!n) return;
+  if (!n || !f) return;
   n.textContent = timerLeft;
   var pct = (timerLeft / 30) * 100;
   var col = timerLeft <= 10 ? 'var(--red)' : timerLeft <= 20 ? 'var(--yellow)' : 'var(--green)';
@@ -708,8 +708,8 @@ function timeUp() {
   lockAll();
   for (var i = 0; i < 2; i++) {
     if (!mDone[i]) {
-      document.getElementById('pstatus' + i).textContent = 'Sure doldu!';
-      document.getElementById('pstatus' + i).style.color = 'var(--red)';
+      var st = document.getElementById('pstatus' + i);
+      if (st) { st.textContent = 'Sure doldu!'; st.style.color = 'var(--red)'; }
     }
   }
   setTimeout(function() { showResult(false, -1, -1); }, 1200);
@@ -810,16 +810,14 @@ function multiGuess(idx) {
     mSolved = true;
     var pts = Math.max(20, 60 + timerLeft - hintsOpen * 8);
     scores[idx] += pts;
-    document.getElementById('mpts' + idx).textContent = scores[idx];
+    var _mpts = document.getElementById('mpts' + idx);
+    if (_mpts) _mpts.textContent = scores[idx];
     var st = document.getElementById('pstatus' + idx);
-    st.textContent = '+' + pts + ' DOGRU!';
-    st.style.color = 'var(--green)';
-    lockAll(); // diger de kilitlenir
-    // Diger 0 puan
+    if (st) { st.textContent = '+' + pts + ' DOGRU!'; st.style.color = 'var(--green)'; }
+    lockAll();
     var other = 1 - idx;
     var ost = document.getElementById('pstatus' + other);
-    ost.textContent = '0 puan';
-    ost.style.color = 'var(--muted)';
+    if (ost) { ost.textContent = '0 puan'; ost.style.color = 'var(--muted)'; }
     setTimeout(function() { showResult(true, idx, pts); }, 1000);
 
   } else {
@@ -836,24 +834,20 @@ function multiGuess(idx) {
     var gEl = document.getElementById('pguess' + idx);
 
     if (rem <= 0) {
-      // Bu oyuncu elendi
       lockPlayer(idx);
-      st.textContent = '5 hakki bitti!';
-      st.style.color = 'var(--red)';
-      gEl.textContent = 'Elendi';
-      // Iki oyuncu da elindiyse tur biter
+      if (st) { st.textContent = '5 hakki bitti!'; st.style.color = 'var(--red)'; }
+      if (gEl) { gEl.textContent = 'Elendi'; }
       if (mDone[0] && mDone[1]) {
         clearInterval(timerInt);
         setTimeout(function() { showResult(false, -1, 0); }, 800);
       }
     } else {
-      st.textContent = 'Yanlis!';
-      st.style.color = 'var(--red)';
-      gEl.textContent = rem + ' hak kaldi';
+      if (st) { st.textContent = 'Yanlis!'; st.style.color = 'var(--red)'; }
+      if (gEl) { gEl.textContent = rem + ' hak kaldi'; }
       setTimeout(function() {
         if (!mDone[idx]) {
-          st.textContent = '';
-          st.style.color = '';
+          var _st = document.getElementById('pstatus' + idx);
+          if (_st) { _st.textContent = ''; _st.style.color = ''; }
         }
       }, 1200);
     }
@@ -1032,10 +1026,17 @@ var isOnline = false;
 
 function openLobby() {
   show('lobbyScreen');
-  // Init socket if not done
   if (!socket) {
-    socket = io();
-    bindSocketEvents();
+    try {
+      socket = io();
+      socket.on('connect', function() { clearLobbyError(); });
+      socket.on('connect_error', function() {
+        showLobbyError('Sunucuya baglanamadi. Sayfayi yenile.');
+      });
+      bindSocketEvents();
+    } catch(e) {
+      showLobbyError('Baglanti hatasi: ' + e.message);
+    }
   }
 }
 
@@ -1180,10 +1181,10 @@ function bindSocketEvents() {
     clearInterval(timerInt);
     onlinePlayers = data.players;
     // Update scores display
-    onlinePlayers.forEach(function(p, i) {
-      var sc = document.getElementById('mpts' + i);
-      if (sc) sc.textContent = p.score;
-    });
+    for (var _i = 0; _i < Math.min(onlinePlayers.length, 2); _i++) {
+      var sc = document.getElementById('mpts' + _i);
+      if (sc) sc.textContent = onlinePlayers[_i].score;
+    }
     showOnlineResult(data);
   });
 
@@ -1225,37 +1226,44 @@ function setupOnlineGame(data) {
   };
 
   // Bars
-  document.getElementById('soloBar').style.display = 'none';
+  var _osb = document.getElementById('soloBar'); if(_osb) _osb.style.display = 'none';
   document.getElementById('multiBar').classList.add('show');
   document.getElementById('timerWrap').classList.add('show');
-  document.getElementById('soloInput').style.display = 'none';
+  var _osi = document.getElementById('soloInput'); if(_osi) _osi.style.display = 'none';
   document.getElementById('dualInput').classList.add('show');
-  document.getElementById('dualInput').style.gridTemplateColumns = '';
+  var _di = document.getElementById('dualInput'); if(_di) _di.style.gridTemplateColumns = '';
 
   // Find my index
   var myIdx = onlinePlayers.findIndex(function(p) { return p.id === socket.id; });
 
-  // Setup player zones - show all players
-  onlinePlayers.forEach(function(p, i) {
-    document.getElementById('mname' + i).textContent = p.name;
-    document.getElementById('mpts' + i).textContent = p.score;
-    document.getElementById('pzname' + i).textContent = p.name;
-  });
+  // Setup player zones - only first 2 (HTML has 2 slots)
+  var displayCount = Math.min(onlinePlayers.length, 2);
+  for (var i = 0; i < displayCount; i++) {
+    var p = onlinePlayers[i];
+    var nm = document.getElementById('mname' + i);
+    var sc = document.getElementById('mpts' + i);
+    var pzn = document.getElementById('pzname' + i);
+    if (nm) nm.textContent = p.name;
+    if (sc) sc.textContent = p.score;
+    if (pzn) pzn.textContent = p.name;
+  }
 
   // Clues
   renderClues();
   renderHintDots();
 
-  // Only my input is interactive
-  onlinePlayers.forEach(function(p, i) {
+  // Setup inputs - only first 2 slots
+  for (var i = 0; i < displayCount; i++) {
     var inp = document.getElementById('minput' + i);
     var btn = document.getElementById('mbtn' + i);
     var st = document.getElementById('pstatus' + i);
-    if (inp) { inp.value = ''; inp.disabled = (i !== myIdx); }
-    if (btn) { btn.disabled = (i !== myIdx); btn.style.opacity = (i !== myIdx) ? '0.3' : '1'; }
-    if (st) { st.textContent = ''; }
-    document.getElementById('pguess' + i).textContent = '5 tahmin hakki';
-  });
+    var gss = document.getElementById('pguess' + i);
+    var isMe = (i === myIdx);
+    if (inp) { inp.value = ''; inp.disabled = !isMe; }
+    if (btn) { btn.disabled = !isMe; btn.style.opacity = isMe ? '1' : '0.3'; }
+    if (st) st.textContent = '';
+    if (gss) gss.textContent = '5 tahmin hakki';
+  }
 
   // Rebind my search
   if (myIdx >= 0) {
@@ -1346,7 +1354,7 @@ function showOnlineFinal() {
   });
   var rbtns = document.querySelector('#finalScreen .rbtns');
   if (isHost) {
-    rbtns.innerHTML = '<button class="bn" onclick="socket.emit('play_again')">TEKRAR</button>' +
+    rbtns.innerHTML = '<button class="bn" onclick="socket.emit(&quot;play_again&quot;)">TEKRAR</button>' +
       '<button class="bm" onclick="goMenu()">Cik</button>';
   } else {
     rbtns.innerHTML = '<div style="color:var(--muted);font-size:.85rem;">Host tekrar baslatabildigi zaman...</div>' +
