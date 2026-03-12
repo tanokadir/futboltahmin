@@ -209,12 +209,13 @@ io.on('connection', (socket) => {
   });
 
   // Start game (host only)
-  socket.on('start_game', () => {
+  socket.on('start_game', (data) => {
     const room = rooms[socket.roomCode];
     if (!room || socket.id !== room.host) return;
     if (room.players.length < 2) { socket.emit('error', 'En az 2 oyuncu gerekli!'); return; }
     room.state = 'playing';
     room.round = 0;
+    room.totalRounds = (data && data.rounds) ? data.rounds : 7;
     room.players.forEach(p => p.score = 0);
     startRound(room);
   });
@@ -293,7 +294,8 @@ io.on('connection', (socket) => {
     const room = rooms[socket.roomCode];
     if (!room || socket.id !== room.host) return;
     room.round++;
-    if (room.round >= 5) {
+    const total = room.totalRounds || 7;
+    if (room.round >= total) {
       room.state = 'final';
       io.to(room.code).emit('game_final', { players: room.players });
     } else {
@@ -310,6 +312,7 @@ io.on('connection', (socket) => {
     room.round = 0;
     room.usedPlayers = [];
     room.state = 'playing';
+    // keep same totalRounds
     startRound(room);
   });
 
@@ -351,7 +354,7 @@ function startRound(room) {
   // Broadcast round start
   io.to(room.code).emit('round_start', {
     round: room.round,
-    totalRounds: 5,
+    totalRounds: room.totalRounds || 7,
     clues: {
       always: clues.always,
       hintsCount: clues.hints.length,
