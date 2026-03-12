@@ -9,6 +9,17 @@ const io = new Server(server, {
   cors: { origin: '*' }
 });
 
+// Set permissive CSP for Socket.io to work
+app.use((req, res, next) => {
+  res.setHeader('Content-Security-Policy',
+    "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; " +
+    "script-src * 'unsafe-inline' 'unsafe-eval'; " +
+    "connect-src * ws: wss:; " +
+    "style-src * 'unsafe-inline';"
+  );
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
