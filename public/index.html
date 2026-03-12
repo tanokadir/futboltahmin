@@ -5,16 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
 <title>Futbolcu Kim?</title>
 <script>
-// Load socket.io - from server if available, else CDN fallback
-</script>
-<script src="/socket.io/socket.io.js" onerror="loadSocketFallback()"></script>
-<script>
 function loadSocketFallback() {
   var s = document.createElement('script');
   s.src = 'https://cdn.socket.io/4.7.2/socket.io.min.js';
   document.head.appendChild(s);
 }
 </script>
+<script src="/socket.io/socket.io.js" onerror="loadSocketFallback()"></script>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:ital,wght@0,700;0,900;1,900&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
