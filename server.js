@@ -264,7 +264,12 @@ io.on('connection', (socket) => {
         });
       }
 
-      const wrong = room.wrongPerPlayer[socket.id];
+      // Once all hints open, only 1 guess remains
+      let wrong = room.wrongPerPlayer[socket.id];
+      if (room.hintsOpen >= 4 && wrong < 4) {
+        room.wrongPerPlayer[socket.id] = 4;
+        wrong = 4;
+      }
       const remaining = 5 - wrong;
 
       if (remaining <= 0) {
