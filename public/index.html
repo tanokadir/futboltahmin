@@ -792,16 +792,20 @@ function soloGuess() {
       renderClues();
       renderHintDots();
     }
+    // Once all hints open, only 1 guess remains
     var remaining = MAX_WRONG - soloWrong;
+    if (hintsOpen >= MAX_HINTS && remaining > 1) remaining = 1;
     if (remaining <= 0) {
-      // Elendi
       streak = 0;
       document.getElementById('sinput').value = '';
       showFb('Hakkin bitti!', 'w');
       setTimeout(function() { showResult(false, 0, 0); }, 800);
     } else {
-      showFb('Yanlis! ' + remaining + ' hak kaldi', 'w');
+      var hint_msg = hintsOpen >= MAX_HINTS ? 'Yanlis! Son tahmin hakkin!' : 'Yanlis! ' + remaining + ' hak kaldi';
+      showFb(hint_msg, 'w');
       document.getElementById('sinput').value = '';
+      // If this was the last hint opening, lock to 1 wrong remaining
+      if (hintsOpen >= MAX_HINTS) { soloWrong = MAX_WRONG - 1; }
     }
   }
 }
@@ -868,6 +872,7 @@ function multiGuess(idx) {
       renderHintDots();
     }
     var rem = MAX_WRONG - mWrong[idx];
+    if (hintsOpen >= MAX_HINTS && rem > 1) { mWrong[idx] = MAX_WRONG - 1; rem = 1; }
     var st = document.getElementById('pstatus' + idx);
     var gEl = document.getElementById('pguess' + idx);
 
@@ -880,8 +885,8 @@ function multiGuess(idx) {
         setTimeout(function() { showResult(false, -1, 0); }, 800);
       }
     } else {
-      if (st) { st.textContent = 'Yanlis!'; st.style.color = 'var(--red)'; }
-      if (gEl) { gEl.textContent = rem + ' hak kaldi'; }
+      if (st) { st.textContent = hintsOpen >= MAX_HINTS ? 'Son tahmin!' : 'Yanlis!'; st.style.color = 'var(--red)'; }
+      if (gEl) { gEl.textContent = hintsOpen >= MAX_HINTS ? 'Son sans!' : rem + ' hak kaldi'; }
       setTimeout(function() {
         if (!mDone[idx]) {
           var _st = document.getElementById('pstatus' + idx);
