@@ -318,14 +318,18 @@ io.on('connection', (socket) => {
     const code = socket.roomCode;
     if (!code || !rooms[code]) return;
     const room = rooms[code];
+    const leavingPlayer = room.players.find(p => p.id === socket.id);
+    const leavingName = leavingPlayer ? leavingPlayer.name : 'Bir oyuncu';
     room.players = room.players.filter(p => p.id !== socket.id);
     if (room.players.length === 0) {
       clearInterval(room.timerInt);
       delete rooms[code];
     } else {
       if (room.host === socket.id) room.host = room.players[0].id;
-      io.to(code).emit('players_updated', { players: room.players });
-      io.to(code).emit('player_left', { name: 'Bir oyuncu' });
+      clearInterval(room.timerInt); // stop the game
+      io.to(code).emit('player_left', { name: leavingName });
+      // Clean up room
+      setTimeout(() => { delete rooms[code]; }, 5000);
     }
   });
 });
