@@ -4,7 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
 <title>Futbolcu Kim?</title>
-<script src="/socket.io/socket.io.js"></script>
+<script>
+// Load socket.io - from server if available, else CDN fallback
+</script>
+<script src="/socket.io/socket.io.js" onerror="loadSocketFallback()"></script>
+<script>
+function loadSocketFallback() {
+  var s = document.createElement('script');
+  s.src = 'https://cdn.socket.io/4.7.2/socket.io.min.js';
+  document.head.appendChild(s);
+}
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:ital,wght@0,700;0,900;1,900&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -1325,11 +1335,23 @@ function showOnlineResult(data) {
   // Replace result buttons for online
   var rbtns = document.querySelector('#resultScreen .rbtns');
   if (isHost) {
-    rbtns.innerHTML = '<button class="bn" onclick="onlineNext()">SONRAKI &#9658;</button>' +
-      '<button class="bm" onclick="goMenu()">Bitir</button>';
+    rbtns.innerHTML = '';
+    var b1 = document.createElement('button');
+    b1.className = 'bn'; b1.innerHTML = 'SONRAKI &#9658;';
+    b1.onclick = onlineNext;
+    var b2 = document.createElement('button');
+    b2.className = 'bm'; b2.textContent = 'Bitir';
+    b2.onclick = goMenu;
+    rbtns.appendChild(b1); rbtns.appendChild(b2);
   } else {
-    rbtns.innerHTML = '<div style="color:var(--muted);font-size:.85rem;">Host sonraki turu baslatacak...</div>' +
-      '<button class="bm" onclick="goMenu()">Ayril</button>';
+    rbtns.innerHTML = '';
+    var msg = document.createElement('div');
+    msg.style.cssText = 'color:var(--muted);font-size:.85rem;';
+    msg.textContent = 'Host sonraki turu baslatacak...';
+    var b2 = document.createElement('button');
+    b2.className = 'bm'; b2.textContent = 'Ayril';
+    b2.onclick = goMenu;
+    rbtns.appendChild(msg); rbtns.appendChild(b2);
   }
   show('resultScreen');
 }
@@ -1354,19 +1376,36 @@ function showOnlineFinal() {
   });
   var rbtns = document.querySelector('#finalScreen .rbtns');
   if (isHost) {
-    rbtns.innerHTML = '<button class="bn" onclick="socket.emit(&quot;play_again&quot;)">TEKRAR</button>' +
-      '<button class="bm" onclick="goMenu()">Cik</button>';
+    rbtns.innerHTML = '';
+    var bf1 = document.createElement('button');
+    bf1.className = 'bn'; bf1.textContent = 'TEKRAR';
+    bf1.onclick = onlinePlayAgain;
+    var bf2 = document.createElement('button');
+    bf2.className = 'bm'; bf2.textContent = 'Cik';
+    bf2.onclick = goMenu;
+    rbtns.appendChild(bf1); rbtns.appendChild(bf2);
   } else {
-    rbtns.innerHTML = '<div style="color:var(--muted);font-size:.85rem;">Host tekrar baslatabildigi zaman...</div>' +
-      '<button class="bm" onclick="goMenu()">Ayril</button>';
+    rbtns.innerHTML = '';
+    var fmsg = document.createElement('div');
+    fmsg.style.cssText = 'color:var(--muted);font-size:.85rem;';
+    fmsg.textContent = 'Host tekrar baslatabildigi zaman...';
+    var bf2 = document.createElement('button');
+    bf2.className = 'bm'; bf2.textContent = 'Ayril';
+    bf2.onclick = goMenu;
+    rbtns.appendChild(fmsg); rbtns.appendChild(bf2);
   }
   show('finalScreen');
 }
 
-// Init
-selMode('solo');
-lobbyTab('create');
+// Init - wait for DOM
+document.addEventListener('DOMContentLoaded', function() {
+  selMode('solo');
+  lobbyTab('create');
+});
 
+function onlinePlayAgain() {
+  if (socket) socket.emit("play_again");
+}
 </script>
 
 <!-- LOBBY SCREEN -->
