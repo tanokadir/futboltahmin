@@ -989,7 +989,16 @@ function showFinal() {
 
 function goMenu() {
   clearInterval(timerInt);
-  document.getElementById('bestDisp').textContent = best;
+  if (socket) {
+    try { socket.disconnect(); } catch(e) {}
+    socket = null;
+  }
+  isOnline = false;
+  onlinePlayers = [];
+  currentCode = null;
+  isHost = false;
+  var bd = document.getElementById('bestDisp');
+  if (bd) bd.textContent = best;
   show('menuScreen');
 }
 
@@ -1069,8 +1078,11 @@ function createRoom() {
 function joinRoom() {
   var code = document.getElementById('joinCode').value.trim().toUpperCase();
   if (!code) { showLobbyError('Oda kodu gir!'); return; }
+  var joinNameEl = document.getElementById('joinName');
+  var name = (joinNameEl && joinNameEl.value.trim()) ? joinNameEl.value.trim() : getLobbyName();
+  if (!name || name === 'Oyuncu') { showLobbyError('Önce adını gir!'); return; }
   clearLobbyError();
-  socket.emit('join_room', { code, name: getLobbyName() });
+  socket.emit('join_room', { code: code, name: name });
 }
 
 function hostStart() {
@@ -1202,7 +1214,21 @@ function bindSocketEvents() {
   });
 
   socket.on('player_left', function(data) {
-    showOnlineFeedback((data.name || 'Bir oyuncu') + ' oyundan ayrildi!', 'w', -1);
+    clearInterval(timerInt);
+    // Show alert and return to menu after 2 seconds
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;';
+    overlay.innerHTML = '<div style="font-size:3rem;">👋</div>' +
+      '<div style="font-family:Barlow Condensed,cursive;font-style:italic;font-weight:900;font-size:2rem;color:#ff2255;">OYUNCU AYRILDI!</div>' +
+      '<div style="color:#4a5568;font-size:.9rem;">' + (data.name || 'Bir oyuncu') + ' oyundan cikti</div>' +
+      '<div style="color:#4a5568;font-size:.8rem;">Ana menüye donuluyor...</div>';
+    document.body.appendChild(overlay);
+    setTimeout(function() {
+      document.body.removeChild(overlay);
+      isOnline = false;
+      socket = null;
+      goMenu();
+    }, 2500);
   });
 }
 
@@ -1449,6 +1475,11 @@ function onlinePlayAgain() {
 
     <!-- Join panel -->
     <div id="panelJoin" style="width:100%;display:none;flex-direction:column;gap:10px;">
+      <div>
+        <div class="mlabel">Adın</div>
+        <input id="joinName" class="ni" type="text" placeholder="Adını gir..." autocomplete="off"
+          style="width:100%;margin-top:6px;">
+      </div>
       <input id="joinCode" class="ni" type="text" placeholder="Oda kodu (örn: AB3KZ)"
         autocomplete="off" autocorrect="off" autocapitalize="characters"
         style="width:100%;text-align:center;font-family:'Bebas Neue',cursive;font-size:1.6rem;letter-spacing:6px;">
