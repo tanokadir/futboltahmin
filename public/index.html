@@ -70,6 +70,14 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'DM
   font-size:.9rem;outline:none;transition:.2s;}
 .ni:focus{border-color:var(--blue);}
 .ni::placeholder{color:var(--muted);}
+.rcBtn{
+  padding:10px 6px;font-family:'Barlow Condensed',cursive;font-style:italic;font-weight:900;
+  font-size:1rem;letter-spacing:2px;background:rgba(255,255,255,.04);
+  border:2px solid rgba(255,255,255,.08);border-radius:10px;color:var(--muted);cursor:pointer;transition:.2s;
+}
+.rcBtn:hover,.rcBtn.sel{
+  border-color:var(--yellow);color:var(--yellow);background:rgba(255,221,0,.08);
+}
 .bplay{width:100%;padding:17px;font-family:'Barlow Condensed',cursive;font-style:italic;font-weight:900;
   font-size:1.6rem;letter-spacing:3px;background:linear-gradient(135deg,var(--green),#00ccaa);
   color:#000;border:none;border-radius:14px;cursor:pointer;box-shadow:0 10px 36px rgba(0,255,136,.32);transition:.2s;}
@@ -251,6 +259,14 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'DM
       <div class="niw">
         <div class="nav na1">B</div>
         <input class="ni" id="pname1" type="text" placeholder="2. Oyuncu" autocomplete="off">
+      </div>
+    </div>
+    <div style="width:100%;margin-bottom:10px;">
+      <div class="mlabel" style="margin-bottom:8px;">TUR SAYISI</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <button class="rcBtn sel" id="rc7" onclick="selRounds(7)">7 TUR</button>
+        <button class="rcBtn" id="rc10" onclick="selRounds(10)">10 TUR</button>
+        <button class="rcBtn" id="rc15" onclick="selRounds(15)">15 TUR</button>
       </div>
     </div>
     <button class="bplay" onclick="startGame()">OYNA &#9658;</button>
@@ -544,7 +560,7 @@ var mDone = [false, false]; // player eliminated?
 var mSolved = false;     // someone got it right?
 var usedDB = [];
 var roundsPlayed = 0;
-var ROUNDS = 5; // rounds per game in multi
+var ROUNDS = 7; // rounds per game
 
 document.getElementById('bestDisp').textContent = best;
 
@@ -558,6 +574,14 @@ function selMode(m) {
   document.getElementById('nsec').classList.remove('show');
 }
 
+function selRounds(n) {
+  ROUNDS = n;
+  [7,10,15].forEach(function(r) {
+    var btn = document.getElementById('rc' + r);
+    if (btn) btn.classList.toggle('sel', r === n);
+  });
+}
+
 function startGame() {
   if (gameMode === 'multi') {
     var n0 = document.getElementById('pname0').value.trim();
@@ -569,6 +593,7 @@ function startGame() {
     pNames = ['Sen'];
     scores = [0];
     streak = 0;
+    roundsPlayed = 0;
   }
   usedDB = [];
   show('gameScreen');
@@ -955,7 +980,7 @@ function showResult(win, winnerIdx, pts) {
 function nextRound() {
   clearInterval(timerInt);
   roundsPlayed++;
-  if (gameMode === 'multi' && roundsPlayed >= ROUNDS) {
+  if (roundsPlayed >= ROUNDS) {
     showFinal();
     return;
   }
@@ -997,8 +1022,19 @@ function goMenu() {
   onlinePlayers = [];
   currentCode = null;
   isHost = false;
+  // Reset lobby UI fully
+  var ri = document.getElementById('roomInfo');
+  if (ri) ri.style.display = 'none';
+  var lp = document.getElementById('lobbyPlayers');
+  if (lp) lp.innerHTML = '';
+  var rc = document.getElementById('roomCodeDisp');
+  if (rc) rc.textContent = '';
+  var pc = document.getElementById('panelCreate');
+  if (pc) pc.style.display = 'flex';
   var bd = document.getElementById('bestDisp');
   if (bd) bd.textContent = best;
+  // Reset round selector to default
+  selRounds(7);
   show('menuScreen');
 }
 
@@ -1086,7 +1122,7 @@ function joinRoom() {
 }
 
 function hostStart() {
-  socket.emit('start_game');
+  socket.emit('start_game', { rounds: ROUNDS });
 }
 
 function copyCode(btn) {
@@ -1161,7 +1197,8 @@ function bindSocketEvents() {
   socket.on('round_start', function(data) {
     isOnline = true;
     onlinePlayers = data.players;
-    // Setup game screen for online
+    roundsPlayed = data.round;
+    ROUNDS = data.totalRounds || ROUNDS;
     setupOnlineGame(data);
     show('gameScreen');
   });
@@ -1248,10 +1285,10 @@ function updateStartBtn(players) {
 // Online game setup
 var onlineInputsBound = false;
 function setupOnlineGame(data) {
-  // Setup clue structure - server sends always[] and hintsCount
   hintsOpen = 0;
   timerLeft = 30;
-  curPlayer = null; // server authoritative
+  curPlayer = null;
+  if (data.totalRounds) ROUNDS = data.totalRounds;
   clues = {
     always: data.clues.always,
     hints: Array(data.clues.hintsCount).fill(null).map(function(_, i) {
