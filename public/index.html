@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Futbolcu Kim?</title>
+<script src="/socket.io/socket.io.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:ital,wght@0,700;0,900;1,900&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#060810;--card:#0f1523;--card2:#171f30;
+  --green:#00ff88;--red:#ff2255;--yellow:#ffdd00;
+  --blue:#3d8eff;--orange:#ff6b00;--text:#f0f4ff;
+  --muted:#4a5568;--border:rgba(255,255,255,0.07);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow-x:hidden;}
+.screen{display:none;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;padding:16px;}
+.screen.active{display:flex;}
+
+/* ── MENU ── */
+#menuScreen{overflow:hidden;position:relative;}
+#menuScreen::before{content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(90deg,rgba(0,255,136,.025) 0,transparent 1px,transparent 80px),
+             repeating-linear-gradient(0deg,rgba(0,255,136,.025) 0,transparent 1px,transparent 80px);
+  animation:grid 14s linear infinite;pointer-events:none;}
+@keyframes grid{to{background-position:80px 80px;}}
+.orb{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none;animation:orb 5s ease-in-out infinite;}
+.o1{width:480px;height:480px;background:rgba(0,255,136,.1);top:-140px;left:-140px;}
+.o2{width:360px;height:360px;background:rgba(61,142,255,.13);bottom:-80px;right:-80px;animation-delay:2.5s;}
+.o3{width:260px;height:260px;background:rgba(255,107,0,.08);top:45%;left:55%;animation-delay:1.2s;}
+@keyframes orb{0%,100%{transform:scale(1);opacity:.8}50%{transform:scale(1.18);opacity:1}}
+.mi{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;width:100%;max-width:500px;}
+.ht{font-family:'Barlow Condensed',cursive;font-style:italic;font-weight:900;font-size:clamp(4.5rem,17vw,8.5rem);line-height:.9;text-align:center;margin-bottom:6px;}
+.ht .l1{display:block;background:linear-gradient(90deg,#00ff88,#00e5ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.ht .l2{display:block;background:linear-gradient(90deg,#ffdd00,#ff6b00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hb{font-size:3.2rem;animation:spin 7s linear infinite,fl 3s ease-in-out infinite;display:block;filter:drop-shadow(0 0 18px rgba(0,255,136,.5));margin-bottom:10px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fl{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-10px) rotate(180deg)}}
+.hs{font-size:.72rem;letter-spacing:6px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:32px;font-weight:600;}
+.badges{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:24px;}
+.bdg{padding:5px 12px;border-radius:20px;font-size:.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);}
+.bdg.g{color:var(--green);border-color:rgba(0,255,136,.3);}
+.bdg.b{color:var(--blue);border-color:rgba(61,142,255,.3);}
+.bdg.y{color:var(--yellow);border-color:rgba(255,221,0,.3);}
+.mlabel{font-size:.65rem;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:10px;font-weight:700;}
+.mcards{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-bottom:18px;}
+.mcard{background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.07);border-radius:14px;
+  padding:16px 12px;cursor:pointer;transition:.2s;text-align:center;}
+.mcard:hover,.mcard.sel{border-color:var(--green);background:rgba(0,255,136,.07);transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,255,136,.18);}
+.mcard .icon{font-size:1.8rem;margin-bottom:6px;display:block;}
+.mcard .title{font-family:'Bebas Neue',cursive;font-size:1.2rem;letter-spacing:2px;}
+.mcard .desc{font-size:.68rem;color:var(--muted);margin-top:2px;}
+.nsec{display:none;width:100%;margin-bottom:16px;flex-direction:column;gap:8px;}
+.nsec.show{display:flex;}
+.niw{display:flex;align-items:center;gap:10px;}
+.nav{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',cursive;font-size:1.1rem;flex-shrink:0;}
+.na0{background:rgba(0,255,136,.15);color:var(--green);}
+.na1{background:rgba(61,142,255,.15);color:var(--blue);}
+.ni{flex:1;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.08);
+  border-radius:10px;padding:11px 14px;color:var(--text);font-family:'DM Sans',sans-serif;
+  font-size:.9rem;outline:none;transition:.2s;}
+.ni:focus{border-color:var(--blue);}
+.ni::placeholder{color:var(--muted);}
+.bplay{width:100%;padding:17px;font-family:'Barlow Condensed',cursive;font-style:italic;font-weight:900;
+  font-size:1.6rem;letter-spacing:3px;background:linear-gradient(135deg,var(--green),#00ccaa);
+  color:#000;border:none;border-radius:14px;cursor:pointer;box-shadow:0 10px 36px rgba(0,255,136,.32);transition:.2s;}
+.bplay:hover{transform:translateY(-2px);box-shadow:0 14px 44px rgba(0,255,136,.42);}
+.bscore{margin-top:12px;font-size:.8rem;color:var(--muted);text-align:center;}
+.bscore span{color:var(--yellow);font-weight:700;}
+
+/* ── GAME ── */
+#gameScreen{justify-content:flex-start;padding:14px 14px 24px;gap:10px;}
+
+/* Solo top bar */
+.solo-bar{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:620px;}
+.sbox .sv{font-family:'Bebas Neue',cursive;font-size:2rem;color:var(--yellow);line-height:1;}
+.sbox .sl{font-size:.55rem;letter-spacing:3px;color:var(--muted);text-transform:uppercase;}
+.stk{display:flex;align-items:center;gap:5px;background:rgba(255,107,0,.1);
+  border:1px solid rgba(255,107,0,.2);border-radius:8px;padding:5px 10px;}
+.stk .sv{font-family:'Bebas Neue',cursive;font-size:1.3rem;color:var(--orange);}
+.hrow{display:flex;gap:5px;}
+.hrt{font-size:1.2rem;transition:.3s;}
+.hrt.x{filter:grayscale(1);opacity:.2;transform:scale(.8);}
+
+/* Multi top bar */
+.multi-bar{display:none;width:100%;max-width:620px;}
+.multi-bar.show{display:block;}
+.multi-scores{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.ms-player{display:flex;flex-direction:column;}
+.ms-player.right{align-items:flex-end;}
+.ms-name{font-size:.62rem;letter-spacing:3px;text-transform:uppercase;font-weight:700;margin-bottom:2px;}
+.ms-pts{font-family:'Bebas Neue',cursive;font-size:2.2rem;line-height:1;}
+.ms-mid{font-size:.6rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+
+/* Timer */
+.timer-wrap{display:none;width:100%;max-width:620px;}
+.timer-wrap.show{display:block;}
+.timer-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.timer-lbl{font-size:.6rem;letter-spacing:3px;color:var(--muted);text-transform:uppercase;}
+.timer-num{font-family:'Bebas Neue',cursive;font-size:1.7rem;line-height:1;}
+.timer-track{height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.timer-fill{height:100%;width:100%;border-radius:3px;transition:width .9s linear,background .5s;}
+
+/* Clue card */
+.pcard{background:var(--card);border:1px solid var(--border);border-radius:16px;
+  padding:18px;width:100%;max-width:620px;}
+.ctitle{font-size:.6rem;letter-spacing:4px;text-transform:uppercase;color:var(--blue);
+  margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.ctitle::after{content:'';flex:1;height:1px;background:var(--border);}
+.cgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+@media(min-width:430px){.cgrid{grid-template-columns:repeat(3,1fr);}}
+.ci{background:var(--card2);border-radius:10px;padding:10px 12px;border:1px solid var(--border);transition:.4s;}
+.ci.rev{border-color:rgba(61,142,255,.3);animation:rev .4s ease;}
+@keyframes rev{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.ci.hid{opacity:.18;filter:blur(3px);}
+.ci .cl{font-size:.56rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+.ci .cv{font-size:.9rem;font-weight:700;}
+.ci.rev .cv{font-family:'Bebas Neue',cursive;font-size:1.1rem;letter-spacing:.5px;}
+
+/* Hint progress dots */
+.hdots{display:flex;gap:5px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+.hd{flex:1;height:5px;border-radius:3px;background:var(--border);transition:.3s;}
+.hd.used{background:var(--blue);}
+.hd.cur{background:var(--green);box-shadow:0 0 7px var(--green);}
+
+/* ── Solo input ── */
+.iarea{width:100%;max-width:620px;}
+#fbBox{padding:11px 16px;border-radius:10px;font-weight:600;font-size:.88rem;
+  text-align:center;display:none;margin-bottom:8px;animation:pop .25s ease;}
+@keyframes pop{from{transform:scale(.96);opacity:0}to{transform:scale(1);opacity:1}}
+#fbBox.w{background:rgba(255,34,85,.1);border:1px solid rgba(255,34,85,.25);color:#ff6080;}
+#fbBox.ok{background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.25);color:var(--green);}
+.swrap{position:relative;}
+.sinput{width:100%;background:var(--card);border:2px solid var(--border);
+  border-radius:11px;padding:12px 15px;font-size:.92rem;color:var(--text);
+  font-family:'DM Sans',sans-serif;outline:none;transition:.2s;}
+.sinput:focus{border-color:var(--blue);}
+.sinput::placeholder{color:var(--muted);}
+.slist{position:absolute;top:calc(100% + 4px);left:0;right:0;
+  background:var(--card2);border:1px solid var(--border);border-radius:11px;
+  z-index:100;max-height:210px;overflow-y:auto;display:none;}
+.si{padding:10px 15px;cursor:pointer;font-size:.88rem;
+  border-bottom:1px solid var(--border);transition:.15s;
+  display:flex;align-items:center;gap:9px;}
+.si:last-child{border-bottom:none;}
+.si:hover,.si.act{background:rgba(61,142,255,.12);}
+.si .sfl{font-size:1rem;}
+.si .sn{font-weight:600;}
+.si .sp{font-size:.72rem;color:var(--muted);}
+.abtns{display:flex;gap:8px;margin-top:8px;}
+.bg{flex:1;background:var(--blue);color:#fff;border:none;border-radius:10px;
+  padding:12px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:.2s;}
+.bg:hover{background:#2266dd;}
+.bh{background:var(--card2);border:1px solid var(--border);color:var(--muted);
+  border-radius:10px;padding:12px 14px;font-size:.78rem;cursor:pointer;
+  font-family:'DM Sans',sans-serif;white-space:nowrap;transition:.2s;}
+.bh:hover:not(:disabled){border-color:var(--yellow);color:var(--yellow);}
+.bh:disabled{opacity:.35;cursor:not-allowed;}
+
+/* ── Multi dual input ── */
+.dual{display:none;width:100%;max-width:620px;}
+.dual.show{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.pzone{}
+.pzone-name{font-size:.62rem;letter-spacing:3px;text-transform:uppercase;font-weight:700;
+  text-align:center;margin-bottom:6px;}
+.pzone-status{text-align:center;margin-top:5px;font-size:.78rem;min-height:18px;font-weight:600;}
+.pzone .sinput{padding:10px 12px;font-size:.85rem;}
+.pzone .bg{padding:11px;font-size:.85rem;margin-top:6px;}
+.pzone-guesses{text-align:center;font-size:.65rem;letter-spacing:1px;color:var(--muted);margin-top:3px;}
+
+/* ── Result ── */
+#resultScreen{text-align:center;}
+.re{font-size:4rem;margin-bottom:12px;animation:bounce 1s ease infinite;}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.rt{font-family:'Barlow Condensed',cursive;font-style:italic;font-weight:900;
+  font-size:clamp(2.8rem,9vw,4.5rem);letter-spacing:2px;margin-bottom:6px;}
+.rt.win{color:var(--green);}
+.rt.los{color:var(--red);}
+.ra{font-size:.95rem;color:var(--muted);margin-bottom:6px;}
+.ra strong{color:var(--text);font-size:1.25rem;display:block;margin-top:4px;}
+.rp{font-family:'Bebas Neue',cursive;font-size:2.6rem;color:var(--yellow);
+  background:rgba(255,221,0,.07);border-radius:12px;padding:10px 26px;
+  border:1px solid rgba(255,221,0,.18);margin:12px 0;}
+.rp small{font-size:.8rem;color:var(--muted);display:block;
+  font-family:'DM Sans',sans-serif;font-weight:400;letter-spacing:2px;text-transform:uppercase;}
+.rbtns{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;justify-content:center;}
+.bn{background:linear-gradient(135deg,var(--green),#00ccaa);color:#000;
+  border:none;border-radius:11px;padding:13px 30px;font-size:.92rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.bm{background:var(--card);border:1px solid var(--border);color:var(--muted);
+  border-radius:11px;padding:13px 22px;font-size:.85rem;cursor:pointer;font-family:'DM Sans',sans-serif;}
+
+/* ── Final ── */
+#finalScreen{text-align:center;}
+.ftitle{font-family:'Barlow Condensed',cursive;font-style:italic;font-weight:900;
+  font-size:clamp(2.5rem,8vw,4rem);color:var(--yellow);margin-bottom:4px;}
+.fsub{font-size:.7rem;letter-spacing:4px;color:var(--muted);text-transform:uppercase;margin-bottom:24px;}
+.podium{display:flex;flex-direction:column;gap:9px;width:100%;max-width:380px;margin-bottom:24px;}
+.pod{display:flex;align-items:center;gap:14px;background:var(--card);
+  border:1px solid var(--border);border-radius:13px;padding:13px 16px;}
+.pod-rank{font-family:'Bebas Neue',cursive;font-size:1.9rem;width:32px;text-align:center;}
+.r1{color:var(--yellow)}.r2{color:#b0bec5}.r3{color:#a0785a}
+.pod-name{flex:1;font-weight:700;}
+.pod-pts{font-family:'Bebas Neue',cursive;font-size:1.5rem;color:var(--green);}
+.pod-pts small{font-size:.68rem;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400;}
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<!-- === MENU === -->
+<div id="menuScreen" class="screen active">
+  <div class="o1 orb"></div><div class="o2 orb"></div><div class="o3 orb"></div>
+  <div class="mi">
+    <span class="hb">&#9917;</span>
+    <h1 class="ht"><span class="l1">FUTBOLCU</span><span class="l2">KIM?</span></h1>
+    <p class="hs">Ipuclarindan futbolcuyu bul</p>
+    <div class="badges">
+      <div class="bdg g">&#9917; 100 Futbolcu</div>
+      <div class="bdg b">&#128101; 2 Oyuncu Modu</div>
+      <div class="bdg y">5 Tahmin &bull; 4 Ipucu</div>
+    </div>
+    <div class="mlabel">Oyun Modu</div>
+    <div class="mcards">
+      <div class="mcard sel" id="mc1" onclick="selMode('solo')">
+        <span class="icon">&#127918;</span>
+        <div class="title">TEK KISI</div>
+        <div class="desc">Kendi rekoru kis</div>
+      </div>
+      <div class="mcard" id="mc2" onclick="openLobby()">
+        <span class="icon">&#128101;</span>
+        <div class="title">ONLINE MULTI</div>
+        <div class="desc">Arkadaşını davet et</div>
+      </div>
+    </div>
+    <div class="nsec" id="nsec">
+      <div class="mlabel">Oyuncu Adlari</div>
+      <div class="niw">
+        <div class="nav na0">A</div>
+        <input class="ni" id="pname0" type="text" placeholder="1. Oyuncu" autocomplete="off">
+      </div>
+      <div class="niw">
+        <div class="nav na1">B</div>
+        <input class="ni" id="pname1" type="text" placeholder="2. Oyuncu" autocomplete="off">
+      </div>
+    </div>
+    <button class="bplay" onclick="startGame()">OYNA &#9658;</button>
+    <div class="bscore">En Yuksek Puan: <span id="bestDisp">0</span></div>
+  </div>
+</div>
+
+<!-- === GAME === -->
+<div id="gameScreen" class="screen">
+
+  <!-- Solo bar -->
+  <div class="solo-bar" id="soloBar">
+    <div class="sbox">
+      <div class="sv" id="soloScore">0</div>
+      <div class="sl">Puan</div>
+    </div>
+    <div class="stk">
+      <span>&#128293;</span>
+      <span class="sv" id="soloStreak">0</span>
+    </div>
+    <div class="hrow" id="livesRow">
+      <span class="hrt" id="h0">&#10084;&#65039;</span>
+      <span class="hrt" id="h1">&#10084;&#65039;</span>
+      <span class="hrt" id="h2">&#10084;&#65039;</span>
+      <span class="hrt" id="h3">&#10084;&#65039;</span>
+      <span class="hrt" id="h4">&#10084;&#65039;</span>
+    </div>
+  </div>
+
+  <!-- Multi bar -->
+  <div class="multi-bar" id="multiBar">
+    <div class="multi-scores">
+      <div class="ms-player">
+        <div class="ms-name" id="mname0" style="color:var(--green)"></div>
+        <div class="ms-pts" id="mpts0" style="color:var(--green)">0</div>
+      </div>
+      <div class="ms-mid">PUAN</div>
+      <div class="ms-player right">
+        <div class="ms-name" id="mname1" style="color:var(--blue)"></div>
+        <div class="ms-pts" id="mpts1" style="color:var(--blue)">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timer -->
+  <div class="timer-wrap" id="timerWrap">
+    <div class="timer-top">
+      <span class="timer-lbl">Kalan Sure</span>
+      <span class="timer-num" id="timerNum">30</span>
+    </div>
+    <div class="timer-track">
+      <div class="timer-fill" id="timerFill"></div>
+    </div>
+  </div>
+
+  <!-- Clue card -->
+  <div class="pcard">
+    <div class="ctitle">Ipuclari</div>
+    <div class="cgrid" id="cgrid"></div>
+    <div class="hdots" id="hdots"></div>
+  </div>
+
+  <!-- Solo input -->
+  <div class="iarea" id="soloInput">
+    <div id="fbBox"></div>
+    <div class="swrap">
+      <input id="sinput" class="sinput" type="text" placeholder="Futbolcu adi yaz..." autocomplete="off" autocorrect="off">
+      <div id="slist" class="slist"></div>
+    </div>
+    <div class="abtns">
+      <button class="bg" onclick="soloGuess()">TAHMIN ET</button>
+      <button class="bh" id="hintBtn" onclick="soloHint()">Ipucu Ac</button>
+    </div>
+  </div>
+
+  <!-- Multi dual input -->
+  <div class="dual" id="dualInput">
+    <div class="pzone" id="pzone0">
+      <div class="pzone-name" id="pzname0" style="color:var(--green)"></div>
+      <div class="swrap">
+        <input id="minput0" class="sinput" type="text" placeholder="Tahmin..." autocomplete="off" autocorrect="off">
+        <div id="mlist0" class="slist"></div>
+      </div>
+      <button class="bg" id="mbtn0" onclick="multiGuess(0)" style="width:100%">TAHMIN</button>
+      <div class="pzone-guesses" id="pguess0">5 tahmin hakki</div>
+      <div class="pzone-status" id="pstatus0"></div>
+    </div>
+    <div class="pzone" id="pzone1">
+      <div class="pzone-name" id="pzname1" style="color:var(--blue)"></div>
+      <div class="swrap">
+        <input id="minput1" class="sinput" type="text" placeholder="Tahmin..." autocomplete="off" autocorrect="off">
+        <div id="mlist1" class="slist"></div>
+      </div>
+      <button class="bg" id="mbtn1" onclick="multiGuess(1)" style="width:100%">TAHMIN</button>
+      <div class="pzone-guesses" id="pguess1">5 tahmin hakki</div>
+      <div class="pzone-status" id="pstatus1"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- === RESULT === -->
+<div id="resultScreen" class="screen">
+  <div class="re" id="rEmoji"></div>
+  <div class="rt" id="rTitle"></div>
+  <div class="ra" id="rAnswer"></div>
+  <div class="rp" id="rPts"></div>
+  <div class="rbtns">
+    <button class="bn" onclick="nextRound()">SONRAKI &#9658;</button>
+    <button class="bm" onclick="endGame()">Bitir</button>
+  </div>
+</div>
+
+<!-- === FINAL === -->
+<div id="finalScreen" class="screen">
+  <div style="font-size:3.5rem;margin-bottom:10px">&#127942;</div>
+  <div class="ftitle">OYUN BITTI!</div>
+  <div class="fsub">Siralama</div>
+  <div class="podium" id="podium"></div>
+  <div class="rbtns">
+    <button class="bn" onclick="startGame()">TEKRAR</button>
+    <button class="bm" onclick="goMenu()">Ana Menu</button>
+  </div>
+</div>
+
+<script>
+// ===========================================
+// PLAYER DATABASE (100 oyuncu)
+// ===========================================
+var DB = [
+  {n:"Lionel Messi",         f:"AR",c:"Arjantin",    age:37,pos:"Sag Kanat",    foot:"Sol",h:170,w:72, val:"30M",  club:"Inter Miami",        no:10, lig:"MLS"},
+  {n:"Cristiano Ronaldo",    f:"PT",c:"Portekiz",    age:39,pos:"Forvet",       foot:"Sag",h:187,w:85, val:"15M",  club:"Al Nassr",           no:7,  lig:"Saudi Pro Ligi"},
+  {n:"Erling Haaland",       f:"NO",c:"Norvec",      age:24,pos:"Santrfor",     foot:"Sol",h:194,w:88, val:"180M", club:"Manchester City",    no:9,  lig:"Premier Lig"},
+  {n:"Kylian Mbappe",        f:"FR",c:"Fransa",      age:26,pos:"Forvet",       foot:"Sag",h:178,w:73, val:"180M", club:"Real Madrid",        no:9,  lig:"La Liga"},
+  {n:"Vinicius Jr",          f:"BR",c:"Brezilya",    age:24,pos:"Sol Kanat",    foot:"Sag",h:176,w:73, val:"180M", club:"Real Madrid",        no:7,  lig:"La Liga"},
+  {n:"Lamine Yamal",         f:"ES",c:"Ispanya",     age:17,pos:"Sag Kanat",    foot:"Sol",h:180,w:65, val:"180M", club:"Barcelona",          no:19, lig:"La Liga"},
+  {n:"Jude Bellingham",      f:"EN",c:"Ingiltere",   age:21,pos:"Merkez MF",   foot:"Sag",h:186,w:83, val:"180M", club:"Real Madrid",        no:5,  lig:"La Liga"},
+  {n:"Mohamed Salah",        f:"EG",c:"Misir",       age:32,pos:"Sag Kanat",    foot:"Sol",h:175,w:71, val:"60M",  club:"Liverpool",          no:11, lig:"Premier Lig"},
+  {n:"Harry Kane",           f:"EN",c:"Ingiltere",   age:31,pos:"Santrfor",     foot:"Sag",h:188,w:86, val:"80M",  club:"Bayern Munih",       no:9,  lig:"Bundesliga"},
+  {n:"Bukayo Saka",          f:"EN",c:"Ingiltere",   age:23,pos:"Sag Kanat",    foot:"Sol",h:178,w:72, val:"150M", club:"Arsenal",            no:7,  lig:"Premier Lig"},
+  {n:"Phil Foden",           f:"EN",c:"Ingiltere",   age:24,pos:"Attacking MF", foot:"Sol",h:171,w:70, val:"150M", club:"Manchester City",    no:47, lig:"Premier Lig"},
+  {n:"Florian Wirtz",        f:"DE",c:"Almanya",     age:21,pos:"Attacking MF", foot:"Sag",h:176,w:70, val:"150M", club:"Bayer Leverkusen",   no:10, lig:"Bundesliga"},
+  {n:"Jamal Musiala",        f:"DE",c:"Almanya",     age:21,pos:"Attacking MF", foot:"Sol",h:183,w:70, val:"150M", club:"Bayern Munih",       no:42, lig:"Bundesliga"},
+  {n:"Cole Palmer",          f:"EN",c:"Ingiltere",   age:22,pos:"Attacking MF", foot:"Sag",h:185,w:76, val:"100M", club:"Chelsea",            no:20, lig:"Premier Lig"},
+  {n:"Martin Odegaard",      f:"NO",c:"Norvec",      age:26,pos:"Attacking MF", foot:"Sag",h:178,w:68, val:"110M", club:"Arsenal",            no:8,  lig:"Premier Lig"},
+  {n:"Rodri",                f:"ES",c:"Ispanya",     age:28,pos:"Def MF",       foot:"Sag",h:191,w:82, val:"120M", club:"Manchester City",    no:16, lig:"Premier Lig"},
+  {n:"Kevin De Bruyne",      f:"BE",c:"Belcika",     age:33,pos:"Attacking MF", foot:"Sag",h:181,w:70, val:"40M",  club:"Manchester City",    no:17, lig:"Premier Lig"},
+  {n:"Pedri",                f:"ES",c:"Ispanya",     age:22,pos:"Merkez MF",   foot:"Sag",h:174,w:60, val:"100M", club:"Barcelona",          no:8,  lig:"La Liga"},
+  {n:"Raphinha",             f:"BR",c:"Brezilya",    age:28,pos:"Sag Kanat",    foot:"Sol",h:176,w:68, val:"80M",  club:"Barcelona",          no:11, lig:"La Liga"},
+  {n:"Federico Valverde",    f:"UY",c:"Uruguay",     age:26,pos:"Merkez MF",   foot:"Sag",h:182,w:78, val:"120M", club:"Real Madrid",        no:8,  lig:"La Liga"},
+  {n:"Lautaro Martinez",     f:"AR",c:"Arjantin",    age:27,pos:"Santrfor",     foot:"Sag",h:174,w:72, val:"110M", club:"Inter Milan",        no:10, lig:"Serie A"},
+  {n:"Victor Osimhen",       f:"NG",c:"Nijerya",     age:26,pos:"Santrfor",     foot:"Sag",h:185,w:78, val:"75M",  club:"Galatasaray",        no:9,  lig:"Super Lig"},
+  {n:"Khvicha Kvaratskhelia", f:"GE",c:"Grcistan",  age:24,pos:"Sol Kanat",    foot:"Sag",h:183,w:74, val:"80M",  club:"PSG",                no:77, lig:"Ligue 1"},
+  {n:"Rafael Leao",          f:"PT",c:"Portekiz",    age:25,pos:"Sol Kanat",    foot:"Sag",h:188,w:78, val:"80M",  club:"AC Milan",           no:10, lig:"Serie A"},
+  {n:"Arda Guler",           f:"TR",c:"Turkiye",     age:20,pos:"Attacking MF", foot:"Sol",h:176,w:65, val:"60M",  club:"Real Madrid",        no:24, lig:"La Liga"},
+  {n:"Hakan Calhanoglu",     f:"TR",c:"Turkiye",     age:31,pos:"Def MF",       foot:"Sol",h:179,w:78, val:"35M",  club:"Inter Milan",        no:20, lig:"Serie A"},
+  {n:"Kenan Yildiz",         f:"TR",c:"Turkiye",     age:20,pos:"Sol Kanat",    foot:"Sag",h:183,w:73, val:"30M",  club:"Juventus",           no:10, lig:"Serie A"},
+  {n:"Antoine Griezmann",    f:"FR",c:"Fransa",      age:33,pos:"Forvet",       foot:"Sol",h:176,w:73, val:"25M",  club:"Atletico Madrid",    no:7,  lig:"La Liga"},
+  {n:"Robert Lewandowski",   f:"PL",c:"Polonya",     age:36,pos:"Santrfor",     foot:"Sag",h:185,w:80, val:"15M",  club:"Barcelona",          no:9,  lig:"La Liga"},
+  {n:"Neymar Jr",            f:"BR",c:"Brezilya",    age:33,pos:"Sol Kanat",    foot:"Sag",h:175,w:68, val:"20M",  club:"Al Hilal",           no:10, lig:"Saudi Pro Ligi"},
+  {n:"Son Heung-min",        f:"KR",c:"Guney Kore",  age:32,pos:"Sol Kanat",    foot:"Sol",h:183,w:78, val:"35M",  club:"Tottenham",          no:7,  lig:"Premier Lig"},
+  {n:"Marcus Rashford",      f:"EN",c:"Ingiltere",   age:27,pos:"Sol Kanat",    foot:"Sag",h:180,w:70, val:"40M",  club:"Aston Villa",        no:10, lig:"Premier Lig"},
+  {n:"Romelu Lukaku",        f:"BE",c:"Belcika",     age:31,pos:"Santrfor",     foot:"Sag",h:191,w:94, val:"20M",  club:"Napoli",             no:11, lig:"Serie A"},
+  {n:"Bernardo Silva",       f:"PT",c:"Portekiz",    age:30,pos:"Attacking MF", foot:"Sag",h:173,w:64, val:"70M",  club:"Manchester City",    no:20, lig:"Premier Lig"},
+  {n:"Trent Alexander-Arnold",f:"EN",c:"Ingiltere",  age:26,pos:"Sag Bek",      foot:"Sag",h:175,w:69, val:"80M",  club:"Real Madrid",        no:66, lig:"La Liga"},
+  {n:"Ruben Dias",           f:"PT",c:"Portekiz",    age:27,pos:"Stoper",        foot:"Sag",h:187,w:76, val:"80M",  club:"Manchester City",    no:3,  lig:"Premier Lig"},
+  {n:"Virgil van Dijk",      f:"NL",c:"Hollanda",    age:33,pos:"Stoper",        foot:"Sag",h:193,w:92, val:"40M",  club:"Liverpool",          no:4,  lig:"Premier Lig"},
+  {n:"Gianluigi Donnarumma", f:"IT",c:"Italya",      age:26,pos:"Kaleci",        foot:"Sol",h:196,w:90, val:"60M",  club:"PSG",                no:99, lig:"Ligue 1"},
+  {n:"Alisson Becker",       f:"BR",c:"Brezilya",    age:32,pos:"Kaleci",        foot:"Sag",h:193,w:91, val:"40M",  club:"Liverpool",          no:1,  lig:"Premier Lig"},
+  {n:"Jonathan David",       f:"CA",c:"Kanada",      age:24,pos:"Santrfor",     foot:"Sag",h:178,w:74, val:"65M",  club:"Lille",              no:9,  lig:"Ligue 1"},
+  {n:"Ademola Lookman",      f:"NG",c:"Nijerya",     age:27,pos:"Sol Kanat",    foot:"Sag",h:175,w:70, val:"55M",  club:"Atalanta",           no:11, lig:"Serie A"},
+  {n:"Achraf Hakimi",        f:"MA",c:"Fas",         age:26,pos:"Sag Bek",      foot:"Sag",h:181,w:73, val:"70M",  club:"PSG",                no:2,  lig:"Ligue 1"},
+  {n:"Theo Hernandez",       f:"FR",c:"Fransa",      age:27,pos:"Sol Bek",      foot:"Sol",h:184,w:84, val:"65M",  club:"AC Milan",           no:19, lig:"Serie A"},
+  {n:"Declan Rice",          f:"EN",c:"Ingiltere",   age:26,pos:"Def MF",       foot:"Sag",h:185,w:82, val:"100M", club:"Arsenal",            no:41, lig:"Premier Lig"},
+  {n:"Karim Benzema",        f:"FR",c:"Fransa",      age:36,pos:"Santrfor",     foot:"Sag",h:185,w:81, val:"15M",  club:"Al Ittihad",         no:9,  lig:"Saudi Pro Ligi"},
+  {n:"Toni Kroos",           f:"DE",c:"Almanya",     age:34,pos:"Merkez MF",   foot:"Sol",h:183,w:76, val:"10M",  club:"Real Madrid",        no:8,  lig:"La Liga"},
+  {n:"Luka Modric",          f:"HR",c:"Hirvatistan", age:39,pos:"Merkez MF",   foot:"Sag",h:172,w:66, val:"5M",   club:"Real Madrid",        no:10, lig:"La Liga"},
+  {n:"N'Golo Kante",         f:"FR",c:"Fransa",      age:33,pos:"Def MF",       foot:"Sag",h:168,w:70, val:"15M",  club:"Al Ittihad",         no:7,  lig:"Saudi Pro Ligi"},
+  {n:"Casemiro",             f:"BR",c:"Brezilya",    age:33,pos:"Def MF",       foot:"Sag",h:185,w:84, val:"20M",  club:"Man United",         no:18, lig:"Premier Lig"},
+  {n:"Thomas Muller",        f:"DE",c:"Almanya",     age:35,pos:"Forvet",       foot:"Sag",h:186,w:75, val:"5M",   club:"Bayern Munih",       no:25, lig:"Bundesliga"},
+  {n:"Leroy Sane",           f:"DE",c:"Almanya",     age:28,pos:"Sol Kanat",    foot:"Sag",h:183,w:75, val:"40M",  club:"Bayern Munih",       no:10, lig:"Bundesliga"},
+  {n:"Joshua Kimmich",       f:"DE",c:"Almanya",     age:29,pos:"Sag Bek/MF",  foot:"Sag",h:177,w:75, val:"60M",  club:"Bayern Munih",       no:6,  lig:"Bundesliga"},
+  {n:"Alphonso Davies",      f:"CA",c:"Kanada",      age:24,pos:"Sol Bek",      foot:"Sol",h:183,w:63, val:"70M",  club:"Bayern Munih",       no:19, lig:"Bundesliga"},
+  {n:"Manuel Neuer",         f:"DE",c:"Almanya",     age:38,pos:"Kaleci",       foot:"Sag",h:193,w:92, val:"5M",   club:"Bayern Munih",       no:1,  lig:"Bundesliga"},
+  {n:"Jan Oblak",            f:"SI",c:"Slovenya",    age:31,pos:"Kaleci",       foot:"Sag",h:188,w:87, val:"30M",  club:"Atletico Madrid",    no:13, lig:"La Liga"},
+  {n:"Ederson",              f:"BR",c:"Brezilya",    age:31,pos:"Kaleci",       foot:"Sol",h:188,w:86, val:"35M",  club:"Manchester City",    no:31, lig:"Premier Lig"},
+  {n:"David Raya",           f:"ES",c:"Ispanya",     age:29,pos:"Kaleci",       foot:"Sag",h:183,w:83, val:"35M",  club:"Arsenal",            no:22, lig:"Premier Lig"},
+  {n:"Dani Carvajal",        f:"ES",c:"Ispanya",     age:32,pos:"Sag Bek",      foot:"Sag",h:173,w:73, val:"20M",  club:"Real Madrid",        no:2,  lig:"La Liga"},
+  {n:"Antonio Rudiger",      f:"DE",c:"Almanya",     age:31,pos:"Stoper",       foot:"Sag",h:190,w:85, val:"30M",  club:"Real Madrid",        no:22, lig:"La Liga"},
+  {n:"William Saliba",       f:"FR",c:"Fransa",      age:23,pos:"Stoper",       foot:"Sag",h:192,w:91, val:"80M",  club:"Arsenal",            no:12, lig:"Premier Lig"},
+  {n:"Lisandro Martinez",    f:"AR",c:"Arjantin",    age:26,pos:"Stoper",       foot:"Sol",h:175,w:76, val:"55M",  club:"Man United",         no:6,  lig:"Premier Lig"},
+  {n:"Jules Kounde",         f:"FR",c:"Fransa",      age:26,pos:"Sag Bek",      foot:"Sag",h:178,w:75, val:"60M",  club:"Barcelona",          no:23, lig:"La Liga"},
+  {n:"Pau Cubarsi",          f:"ES",c:"Ispanya",     age:18,pos:"Stoper",       foot:"Sol",h:184,w:77, val:"60M",  club:"Barcelona",          no:3,  lig:"La Liga"},
+  {n:"Gavi",                 f:"ES",c:"Ispanya",     age:22,pos:"Merkez MF",   foot:"Sol",h:173,w:60, val:"80M",  club:"Barcelona",          no:6,  lig:"La Liga"},
+  {n:"Frenkie de Jong",      f:"NL",c:"Hollanda",    age:27,pos:"Merkez MF",   foot:"Sag",h:180,w:74, val:"45M",  club:"Barcelona",          no:21, lig:"La Liga"},
+  {n:"Ilkay Gundogan",       f:"DE",c:"Almanya",     age:34,pos:"Merkez MF",   foot:"Sag",h:180,w:80, val:"10M",  club:"Barcelona",          no:22, lig:"La Liga"},
+  {n:"Nicolo Barella",       f:"IT",c:"Italya",      age:27,pos:"Merkez MF",   foot:"Sag",h:172,w:68, val:"80M",  club:"Inter Milan",        no:23, lig:"Serie A"},
+  {n:"Marcus Thuram",        f:"FR",c:"Fransa",      age:27,pos:"Santrfor",     foot:"Sag",h:192,w:85, val:"55M",  club:"Inter Milan",        no:9,  lig:"Serie A"},
+  {n:"Mike Maignan",         f:"FR",c:"Fransa",      age:29,pos:"Kaleci",       foot:"Sag",h:191,w:83, val:"50M",  club:"AC Milan",           no:16, lig:"Serie A"},
+  {n:"Ousmane Dembele",      f:"FR",c:"Fransa",      age:27,pos:"Sag Kanat",    foot:"Sol",h:178,w:67, val:"60M",  club:"PSG",                no:10, lig:"Ligue 1"},
+  {n:"Bradley Barcola",      f:"FR",c:"Fransa",      age:22,pos:"Sol Kanat",    foot:"Sag",h:180,w:70, val:"70M",  club:"PSG",                no:29, lig:"Ligue 1"},
+  {n:"Goncalo Ramos",        f:"PT",c:"Portekiz",    age:23,pos:"Santrfor",     foot:"Sag",h:187,w:79, val:"60M",  club:"PSG",                no:9,  lig:"Ligue 1"},
+  {n:"Sadio Mane",           f:"SN",c:"Senegal",     age:32,pos:"Sol Kanat",    foot:"Sag",h:175,w:69, val:"15M",  club:"Al Nassr",           no:10, lig:"Saudi Pro Ligi"},
+  {n:"Ciro Immobile",        f:"IT",c:"Italya",      age:34,pos:"Santrfor",     foot:"Sag",h:185,w:80, val:"8M",   club:"Besiktas",           no:17, lig:"Super Lig"},
+  {n:"Mauro Icardi",         f:"AR",c:"Arjantin",    age:31,pos:"Santrfor",     foot:"Sag",h:181,w:77, val:"5M",   club:"Galatasaray",        no:9,  lig:"Super Lig"},
+  {n:"Dries Mertens",        f:"BE",c:"Belcika",     age:37,pos:"Forvet",       foot:"Sol",h:169,w:65, val:"3M",   club:"Galatasaray",        no:14, lig:"Super Lig"},
+  {n:"Alvaro Morata",        f:"ES",c:"Ispanya",     age:32,pos:"Santrfor",     foot:"Sag",h:187,w:80, val:"15M",  club:"AC Milan",           no:7,  lig:"Serie A"},
+  {n:"Reece James",          f:"EN",c:"Ingiltere",   age:25,pos:"Sag Bek",      foot:"Sag",h:180,w:80, val:"55M",  club:"Chelsea",            no:24, lig:"Premier Lig"},
+  {n:"Ben White",            f:"EN",c:"Ingiltere",   age:27,pos:"Sag Bek",      foot:"Sag",h:186,w:82, val:"60M",  club:"Arsenal",            no:4,  lig:"Premier Lig"},
+  {n:"Ferland Mendy",        f:"FR",c:"Fransa",      age:29,pos:"Sol Bek",      foot:"Sol",h:180,w:75, val:"30M",  club:"Real Madrid",        no:23, lig:"La Liga"},
+  {n:"Koke",                 f:"ES",c:"Ispanya",     age:32,pos:"Merkez MF",   foot:"Sag",h:176,w:72, val:"15M",  club:"Atletico Madrid",    no:6,  lig:"La Liga"},
+  {n:"Kingsley Coman",       f:"FR",c:"Fransa",      age:28,pos:"Sol Kanat",    foot:"Sag",h:181,w:73, val:"45M",  club:"Bayern Munih",       no:11, lig:"Bundesliga"},
+  {n:"Wojciech Szczesny",    f:"PL",c:"Polonya",     age:34,pos:"Kaleci",       foot:"Sol",h:196,w:84, val:"10M",  club:"Barcelona",          no:25, lig:"La Liga"},
+  {n:"Federico Chiesa",      f:"IT",c:"Italya",      age:27,pos:"Sag Kanat",    foot:"Sol",h:175,w:70, val:"25M",  club:"Liverpool",          no:14, lig:"Premier Lig"},
+  {n:"Niclas Fullkrug",      f:"DE",c:"Almanya",     age:32,pos:"Santrfor",     foot:"Sag",h:189,w:88, val:"25M",  club:"West Ham",           no:11, lig:"Premier Lig"},
+  {n:"Fermin Lopez",         f:"ES",c:"Ispanya",     age:22,pos:"Attacking MF", foot:"Sag",h:172,w:68, val:"45M",  club:"Barcelona",          no:16, lig:"La Liga"},
+  {n:"Dani Olmo",            f:"ES",c:"Ispanya",     age:26,pos:"Attacking MF", foot:"Sag",h:178,w:70, val:"70M",  club:"Barcelona",          no:20, lig:"La Liga"},
+  {n:"Warren Zaire-Emery",   f:"FR",c:"Fransa",      age:18,pos:"Merkez MF",   foot:"Sag",h:178,w:68, val:"60M",  club:"PSG",                no:33, lig:"Ligue 1"},
+  {n:"Denzel Dumfries",      f:"NL",c:"Hollanda",    age:28,pos:"Sag Bek",      foot:"Sag",h:187,w:85, val:"30M",  club:"Inter Milan",        no:2,  lig:"Serie A"},
+  {n:"Tijjani Reijnders",    f:"NL",c:"Hollanda",    age:26,pos:"Merkez MF",   foot:"Sag",h:182,w:75, val:"45M",  club:"AC Milan",           no:14, lig:"Serie A"},
+  {n:"Marc Cucurella",       f:"ES",c:"Ispanya",     age:26,pos:"Sol Bek",      foot:"Sol",h:172,w:68, val:"40M",  club:"Chelsea",            no:32, lig:"Premier Lig"},
+  {n:"Davide Frattesi",      f:"IT",c:"Italya",      age:25,pos:"Merkez MF",   foot:"Sag",h:175,w:70, val:"45M",  club:"Inter Milan",        no:16, lig:"Serie A"},
+  {n:"Diogo Dalot",          f:"PT",c:"Portekiz",    age:25,pos:"Sag Bek",      foot:"Sag",h:183,w:69, val:"45M",  club:"Man United",         no:20, lig:"Premier Lig"},
+  {n:"Eder Militao",         f:"BR",c:"Brezilya",    age:26,pos:"Stoper",       foot:"Sag",h:186,w:77, val:"60M",  club:"Real Madrid",        no:3,  lig:"La Liga"},
+  {n:"Marc-Andre ter Stegen",f:"DE",c:"Almanya",     age:32,pos:"Kaleci",       foot:"Sol",h:187,w:85, val:"25M",  club:"Barcelona",          no:1,  lig:"La Liga"},
+  {n:"Ederson Moraes",       f:"BR",c:"Brezilya",    age:31,pos:"Kaleci",       foot:"Sol",h:188,w:86, val:"35M",  club:"Manchester City",    no:31, lig:"Premier Lig"},
+  {n:"Ivan Toney",           f:"EN",c:"Ingiltere",   age:28,pos:"Santrfor",     foot:"Sag",h:181,w:78, val:"40M",  club:"Al Ahli",            no:7,  lig:"Saudi Pro Ligi"},
+  {n:"Serge Gnabry",         f:"DE",c:"Almanya",     age:29,pos:"Sag Kanat",    foot:"Sol",h:175,w:73, val:"30M",  club:"Bayern Munih",       no:7,  lig:"Bundesliga"},
+];
+
+// ===========================================
+// CLUE SYSTEM
+// Baslangicta gosterilen (6): Yas, Uyruk, Boy, Kilo, Mevki, Kulup
+// Ipucu olarak acilanlar (4): Ayak, Piyasa, Forma No, Lig
+// ===========================================
+function flagCode(f) {
+  var m = {
+    AR:"AR",BR:"BR",FR:"FR",ES:"ES",PT:"PT",DE:"DE",EN:"ENG",IT:"ITA",
+    NL:"HOL",BE:"BEL",NO:"NOR",PL:"POL",HR:"HIR",TR:"TUR",EG:"MIS",
+    NG:"NJE",SN:"SEN",MA:"FAS",GE:"GRC",KR:"KOR",CA:"KAN",SI:"SLO",UY:"URU"
+  };
+  return m[f] || f;
+}
+
+function buildClues(p) {
+  // always[]: always visible from start
+  // hints[]: revealed one by one (4 total)
+  return {
+    always: [
+      { l:"YAS",     v: p.age + " yasinda" },
+      { l:"UYRUK",   v: "["+flagCode(p.f)+"] " + p.c },
+      { l:"BOY",     v: p.h + " cm" },
+      { l:"KILO",    v: p.w + " kg" },
+      { l:"MEVKi",   v: p.pos },
+      { l:"KULUP",   v: p.club },
+    ],
+    hints: [
+      { l:"AYAK",    v: p.foot + " Ayak" },
+      { l:"PIYASA",  v: p.val + " EUR" },
+      { l:"FORMA",   v: "#" + p.no },
+      { l:"LIG",     v: p.lig },
+    ]
+  };
+}
+
+// ===========================================
+// GAME STATE
+// ===========================================
+var gameMode = 'solo';
+var pNames = ['Sen', 'Rakip'];
+var pColors = ['#00ff88', '#3d8eff'];
+var scores = [0, 0];
+var streak = 0;
+var best = parseInt(localStorage.getItem('fk3_best') || '0');
+
+// Round state
+var curPlayer = null;
+var clues = null;        // { always:[], hints:[] }
+var hintsOpen = 0;       // how many hint clues revealed (0-4)
+
+// Solo state
+var soloWrong = 0;
+var MAX_WRONG = 5;
+var MAX_HINTS = 4;
+
+// Multi state
+var timerInt = null;
+var timerLeft = 30;
+var mWrong = [0, 0];     // wrong guesses per player
+var mDone = [false, false]; // player eliminated?
+var mSolved = false;     // someone got it right?
+var usedDB = [];
+var roundsPlayed = 0;
+var ROUNDS = 5; // rounds per game in multi
+
+document.getElementById('bestDisp').textContent = best;
+
+// ===========================================
+// MENU
+// ===========================================
+function selMode(m) {
+  gameMode = m;
+  document.getElementById('mc1').classList.toggle('sel', m === 'solo');
+  document.getElementById('mc2').classList.toggle('sel', m === 'multi');
+  document.getElementById('nsec').classList.toggle('show', m === 'multi');
+}
+
+function startGame() {
+  if (gameMode === 'multi') {
+    var n0 = document.getElementById('pname0').value.trim();
+    var n1 = document.getElementById('pname1').value.trim();
+    pNames = [n0 || '1. Oyuncu', n1 || '2. Oyuncu'];
+    scores = [0, 0];
+    roundsPlayed = 0;
+  } else {
+    pNames = ['Sen'];
+    scores = [0];
+    streak = 0;
+  }
+  usedDB = [];
+  show('gameScreen');
+  loadRound();
+}
+
+// ===========================================
+// ROUND SETUP
+// ===========================================
+function pickPlayer() {
+  var avail = DB.filter(function(p){ return usedDB.indexOf(p.n) === -1; });
+  if (!avail.length) { usedDB = []; avail = DB.slice(); }
+  var sh = shuffle(avail);
+  usedDB.push(sh[0].n);
+  return sh[0];
+}
+
+function loadRound() {
+  // Pick player
+  curPlayer = pickPlayer();
+  clues = buildClues(curPlayer);
+  hintsOpen = 0;
+  soloWrong = 0;
+  mWrong = [0, 0];
+  mDone = [false, false];
+  mSolved = false;
+
+  renderClues();
+  renderHintDots();
+
+  if (gameMode === 'solo') {
+    // Show/hide bars
+    document.getElementById('soloBar').style.display = 'flex';
+    document.getElementById('multiBar').classList.remove('show');
+    document.getElementById('timerWrap').classList.remove('show');
+    document.getElementById('soloInput').style.display = 'block';
+    document.getElementById('dualInput').classList.remove('show');
+    // Update HUD
+    document.getElementById('soloScore').textContent = scores[0];
+    document.getElementById('soloStreak').textContent = streak;
+    updateSoloLives();
+    hideFb();
+    document.getElementById('sinput').value = '';
+    document.getElementById('hintBtn').disabled = false;
+    document.getElementById('hintBtn').textContent = 'Ipucu Ac (4 kaldi)';
+  } else {
+    // Multi setup
+    document.getElementById('soloBar').style.display = 'none';
+    document.getElementById('multiBar').classList.add('show');
+    document.getElementById('timerWrap').classList.add('show');
+    document.getElementById('soloInput').style.display = 'none';
+    document.getElementById('dualInput').classList.add('show');
+    // Names & scores
+    for (var i = 0; i < 2; i++) {
+      document.getElementById('mname' + i).textContent = pNames[i];
+      document.getElementById('mpts' + i).textContent = scores[i];
+      document.getElementById('pzname' + i).textContent = pNames[i];
+      document.getElementById('minput' + i).value = '';
+      document.getElementById('minput' + i).disabled = false;
+      document.getElementById('mbtn' + i).disabled = false;
+      document.getElementById('mbtn' + i).style.opacity = '1';
+      document.getElementById('pstatus' + i).textContent = '';
+      document.getElementById('pguess' + i).textContent = '5 tahmin hakki';
+      setupMSearch(i);
+    }
+    startTimer();
+  }
+}
+
+// ===========================================
+// CLUE RENDERING
+// ===========================================
+function renderClues() {
+  var grid = document.getElementById('cgrid');
+  grid.innerHTML = '';
+
+  // Always-shown clues
+  clues.always.forEach(function(c) {
+    var d = document.createElement('div');
+    d.className = 'ci rev';
+    d.innerHTML = '<div class="cl">' + c.l + '</div><div class="cv">' + c.v + '</div>';
+    grid.appendChild(d);
+  });
+
+  // Hint clues
+  clues.hints.forEach(function(c, i) {
+    var d = document.createElement('div');
+    if (i < hintsOpen) {
+      d.className = 'ci rev';
+      d.innerHTML = '<div class="cl">' + c.l + '</div><div class="cv">' + c.v + '</div>';
+    } else {
+      d.className = 'ci hid';
+      d.innerHTML = '<div class="cl">' + c.l + '</div><div class="cv">---</div>';
+    }
+    grid.appendChild(d);
+  });
+}
+
+function renderHintDots() {
+  var bar = document.getElementById('hdots');
+  bar.innerHTML = '';
+  for (var i = 0; i < MAX_HINTS; i++) {
+    var d = document.createElement('div');
+    d.className = 'hd' + (i < hintsOpen ? ' used' : (i === hintsOpen ? ' cur' : ''));
+    bar.appendChild(d);
+  }
+  // Update hint button
+  var rem = MAX_HINTS - hintsOpen;
+  var btn = document.getElementById('hintBtn');
+  btn.disabled = rem <= 0;
+  btn.textContent = rem > 0 ? ('Ipucu Ac (' + rem + ' kaldi)') : 'Ipucu Bitti';
+}
+
+// ===========================================
+// TIMER (MULTI)
+// ===========================================
+function startTimer() {
+  timerLeft = 30;
+  clearInterval(timerInt);
+  updateTimerUI();
+  timerInt = setInterval(function() {
+    timerLeft--;
+    updateTimerUI();
+    if (timerLeft <= 0) {
+      clearInterval(timerInt);
+      timeUp();
+    }
+  }, 1000);
+}
+
+function updateTimerUI() {
+  var n = document.getElementById('timerNum');
+  var f = document.getElementById('timerFill');
+  if (!n) return;
+  n.textContent = timerLeft;
+  var pct = (timerLeft / 30) * 100;
+  var col = timerLeft <= 10 ? 'var(--red)' : timerLeft <= 20 ? 'var(--yellow)' : 'var(--green)';
+  n.style.color = col;
+  f.style.width = pct + '%';
+  f.style.background = col;
+}
+
+function timeUp() {
+  lockAll();
+  for (var i = 0; i < 2; i++) {
+    if (!mDone[i]) {
+      document.getElementById('pstatus' + i).textContent = 'Sure doldu!';
+      document.getElementById('pstatus' + i).style.color = 'var(--red)';
+    }
+  }
+  setTimeout(function() { showResult(false, -1, -1); }, 1200);
+}
+
+function lockAll() {
+  for (var i = 0; i < 2; i++) lockPlayer(i);
+}
+
+function lockPlayer(i) {
+  var inp = document.getElementById('minput' + i);
+  var btn = document.getElementById('mbtn' + i);
+  if (inp) inp.disabled = true;
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.35'; }
+  mDone[i] = true;
+}
+
+// ===========================================
+// SOLO GUESS LOGIC
+// Rule: 5 tahmin hakki, her yanlis bir ipucu acar.
+//       4 ipucu bittikten sonra kalan tek tahmin hakki -> yanlis -> elenir
+// ===========================================
+function soloGuess() {
+  var g = document.getElementById('sinput').value.trim();
+  if (!g) return;
+  hideSug('slist');
+
+  if (g.toLowerCase() === curPlayer.n.toLowerCase()) {
+    // DOGRU
+    var pts = calcPts();
+    scores[0] += pts;
+    streak++;
+    if (scores[0] > best) { best = scores[0]; localStorage.setItem('fk3_best', best); }
+    document.getElementById('sinput').value = '';
+    showResult(true, 0, pts);
+  } else {
+    // YANLIS
+    soloWrong++;
+    // Her yanlis bir ipucu acar
+    if (hintsOpen < MAX_HINTS) {
+      hintsOpen++;
+      renderClues();
+      renderHintDots();
+    }
+    var remaining = MAX_WRONG - soloWrong;
+    if (remaining <= 0) {
+      // Elendi
+      streak = 0;
+      document.getElementById('sinput').value = '';
+      showFb('Hakkin bitti!', 'w');
+      setTimeout(function() { showResult(false, 0, 0); }, 800);
+    } else {
+      showFb('Yanlis! ' + remaining + ' hak kaldi', 'w');
+      document.getElementById('sinput').value = '';
+    }
+  }
+}
+
+function soloHint() {
+  if (hintsOpen >= MAX_HINTS) return;
+  hintsOpen++;
+  renderClues();
+  renderHintDots();
+}
+
+function updateSoloLives() {
+  for (var i = 0; i < MAX_WRONG; i++) {
+    var h = document.getElementById('h' + i);
+    if (h) h.className = 'hrt' + (i < soloWrong ? ' x' : '');
+  }
+}
+
+function calcPts() {
+  return Math.max(10, 100 - hintsOpen * 15 - soloWrong * 8) + streak * 5;
+}
+
+// ===========================================
+// MULTI GUESS LOGIC
+// Rule: 5 tahmin hakki her oyuncuya.
+//       Her yanlis 1 ipucu acar (ortak ipucu sistemi).
+//       4 ipucu acildiktan sonra kalan 1 hakla dogru bilemezse elenir.
+//       30 saniye icinde istedigince deneyebilir (5 hakka kadar).
+//       Birisi dogru bilirse tur biter, o puan alir, diger 0.
+// ===========================================
+function multiGuess(idx) {
+  if (mDone[idx]) return;
+  if (timerLeft <= 0) return;
+  var inp = document.getElementById('minput' + idx);
+  if (!inp) return;
+  var g = inp.value.trim();
+  if (!g) return;
+  hideSug('mlist' + idx);
+  inp.value = '';
+
+  if (g.toLowerCase() === curPlayer.n.toLowerCase()) {
+    // DOGRU - bu oyuncu kazandi
+    clearInterval(timerInt);
+    mSolved = true;
+    var pts = Math.max(20, 60 + timerLeft - hintsOpen * 8);
+    scores[idx] += pts;
+    document.getElementById('mpts' + idx).textContent = scores[idx];
+    var st = document.getElementById('pstatus' + idx);
+    st.textContent = '+' + pts + ' DOGRU!';
+    st.style.color = 'var(--green)';
+    lockAll(); // diger de kilitlenir
+    // Diger 0 puan
+    var other = 1 - idx;
+    var ost = document.getElementById('pstatus' + other);
+    ost.textContent = '0 puan';
+    ost.style.color = 'var(--muted)';
+    setTimeout(function() { showResult(true, idx, pts); }, 1000);
+
+  } else {
+    // YANLIS
+    mWrong[idx]++;
+    // Her yanlis ortak ipucu acar
+    if (hintsOpen < MAX_HINTS) {
+      hintsOpen++;
+      renderClues();
+      renderHintDots();
+    }
+    var rem = MAX_WRONG - mWrong[idx];
+    var st = document.getElementById('pstatus' + idx);
+    var gEl = document.getElementById('pguess' + idx);
+
+    if (rem <= 0) {
+      // Bu oyuncu elendi
+      lockPlayer(idx);
+      st.textContent = '5 hakki bitti!';
+      st.style.color = 'var(--red)';
+      gEl.textContent = 'Elendi';
+      // Iki oyuncu da elindiyse tur biter
+      if (mDone[0] && mDone[1]) {
+        clearInterval(timerInt);
+        setTimeout(function() { showResult(false, -1, 0); }, 800);
+      }
+    } else {
+      st.textContent = 'Yanlis!';
+      st.style.color = 'var(--red)';
+      gEl.textContent = rem + ' hak kaldi';
+      setTimeout(function() {
+        if (!mDone[idx]) {
+          st.textContent = '';
+          st.style.color = '';
+        }
+      }, 1200);
+    }
+  }
+}
+
+// ===========================================
+// SEARCH AUTOCOMPLETE
+// ===========================================
+(function() {
+  var inp = document.getElementById('sinput');
+  var lst = document.getElementById('slist');
+  inp.addEventListener('input', function() { suggest(inp, lst, null); });
+  inp.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') soloGuess();
+  });
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('#soloInput')) hideSug('slist');
+  });
+})();
+
+function setupMSearch(idx) {
+  var inp = document.getElementById('minput' + idx);
+  var lst = document.getElementById('mlist' + idx);
+  // Clone to remove old listeners
+  var ni = inp.cloneNode(true);
+  inp.parentNode.replaceChild(ni, inp);
+  var nl = lst.cloneNode(false);
+  lst.parentNode.replaceChild(nl, lst);
+  ni.addEventListener('input', function() { suggest(ni, nl, idx); });
+  ni.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') multiGuess(idx);
+  });
+}
+
+function suggest(inp, lst, pickIdx) {
+  var q = inp.value.trim().toLowerCase();
+  if (!q) { lst.style.display = 'none'; return; }
+  var matches = DB.filter(function(p) { return p.n.toLowerCase().includes(q); }).slice(0, 7);
+  if (!matches.length) { lst.style.display = 'none'; return; }
+  lst.innerHTML = '';
+  matches.forEach(function(p) {
+    var d = document.createElement('div');
+    d.className = 'si';
+    d.innerHTML = '<span class="sfl">[' + flagCode(p.f) + ']</span>' +
+                  '<span class="sn">' + p.n + '</span>' +
+                  '<span class="sp">' + p.pos + '</span>';
+    d.addEventListener('click', function() {
+      inp.value = p.n;
+      lst.style.display = 'none';
+    });
+    lst.appendChild(d);
+  });
+  lst.style.display = 'block';
+}
+
+function hideSug(id) {
+  var el = document.getElementById(id);
+  if (el) { el.style.display = 'none'; el.innerHTML = ''; }
+}
+
+// ===========================================
+// RESULT SCREEN
+// ===========================================
+function showResult(win, winnerIdx, pts) {
+  clearInterval(timerInt);
+  document.getElementById('rEmoji').textContent = win ? '&#127881;' : '&#128546;';
+  document.getElementById('rEmoji').innerHTML = win ? '&#127881;' : '&#128546;';
+  var rt = document.getElementById('rTitle');
+
+  if (gameMode === 'solo') {
+    rt.textContent = win ? 'DOGRU!' : 'YANLIS!';
+    rt.className = 'rt ' + (win ? 'win' : 'los');
+    document.getElementById('rAnswer').innerHTML = 'Cevap: <strong>' + curPlayer.n + '</strong>';
+    var rp = document.getElementById('rPts');
+    if (win) {
+      rp.innerHTML = '+' + pts + '<small>puan kazandin</small>';
+    } else {
+      rp.innerHTML = scores[0] + '<small>toplam puan</small>';
+    }
+  } else {
+    // Multi
+    if (win && winnerIdx >= 0) {
+      rt.textContent = pNames[winnerIdx] + ' DOGRU BILDI!';
+      rt.className = 'rt win';
+      document.getElementById('rAnswer').innerHTML = 'Cevap: <strong>' + curPlayer.n + '</strong>';
+      document.getElementById('rPts').innerHTML = '+' + pts + '<small>' + pNames[winnerIdx] + ' puan kazandi</small>';
+    } else {
+      rt.textContent = 'KIMSE BILEMEDI!';
+      rt.className = 'rt los';
+      document.getElementById('rAnswer').innerHTML = 'Cevap: <strong>' + curPlayer.n + '</strong>';
+      document.getElementById('rPts').innerHTML = '0<small>puan kazanilmadi</small>';
+    }
+  }
+  show('resultScreen');
+}
+
+function nextRound() {
+  clearInterval(timerInt);
+  roundsPlayed++;
+  if (gameMode === 'multi' && roundsPlayed >= ROUNDS) {
+    showFinal();
+    return;
+  }
+  show('gameScreen');
+  loadRound();
+}
+
+function endGame() {
+  clearInterval(timerInt);
+  if (gameMode === 'multi') showFinal();
+  else goMenu();
+}
+
+function showFinal() {
+  var data = pNames.map(function(n, i) { return { n: n, s: scores[i], c: pColors[i] }; });
+  data.sort(function(a, b) { return b.s - a.s; });
+  var pod = document.getElementById('podium');
+  pod.innerHTML = '';
+  var ranks = ['1.','2.','3.','4.'];
+  var rCls = ['r1','r2','r3',''];
+  data.forEach(function(p, i) {
+    var row = document.createElement('div');
+    row.className = 'pod';
+    row.innerHTML = '<div class="pod-rank ' + rCls[i] + '">' + ranks[i] + '</div>' +
+      '<div class="pod-name" style="color:' + p.c + '">' + p.n + '</div>' +
+      '<div class="pod-pts" style="color:' + p.c + '">' + p.s + '<small> puan</small></div>';
+    pod.appendChild(row);
+  });
+  show('finalScreen');
+}
+
+function goMenu() {
+  clearInterval(timerInt);
+  document.getElementById('bestDisp').textContent = best;
+  show('menuScreen');
+}
+
+// ===========================================
+// FEEDBACK
+// ===========================================
+function showFb(msg, type) {
+  var fb = document.getElementById('fbBox');
+  fb.textContent = msg; fb.className = type; fb.style.display = 'block';
+}
+function hideFb() {
+  document.getElementById('fbBox').style.display = 'none';
+}
+
+// ===========================================
+// UTILS
+// ===========================================
+function shuffle(a) {
+  var b = a.slice();
+  for (var i = b.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = b[i]; b[i] = b[j]; b[j] = t;
+  }
+  return b;
+}
+function show(id) {
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+}
+
+
+// ==================================================
+// ONLINE / SOCKET.IO
+// ==================================================
+var socket = null;
+var isHost = false;
+var myId = null;
+var currentCode = null;
+var onlinePlayers = []; // [{id, name, score}]
+var isOnline = false;
+
+function openLobby() {
+  show('lobbyScreen');
+  // Init socket if not done
+  if (!socket) {
+    socket = io();
+    bindSocketEvents();
+  }
+}
+
+function lobbyTab(tab) {
+  var isCreate = tab === 'create';
+  document.getElementById('tabCreate').style.background = isCreate ? 'var(--green)' : 'var(--card2)';
+  document.getElementById('tabCreate').style.color = isCreate ? '#000' : 'var(--muted)';
+  document.getElementById('tabJoin').style.background = !isCreate ? 'var(--blue)' : 'var(--card2)';
+  document.getElementById('tabJoin').style.color = !isCreate ? '#fff' : 'var(--muted)';
+  document.getElementById('panelCreate').style.display = isCreate ? 'flex' : 'none';
+  document.getElementById('panelJoin').style.display = !isCreate ? 'flex' : 'none';
+}
+
+function getLobbyName() {
+  return document.getElementById('onlineName').value.trim() || 'Oyuncu';
+}
+
+function createRoom() {
+  clearLobbyError();
+  socket.emit('create_room', { name: getLobbyName() });
+}
+
+function joinRoom() {
+  var code = document.getElementById('joinCode').value.trim().toUpperCase();
+  if (!code) { showLobbyError('Oda kodu gir!'); return; }
+  clearLobbyError();
+  socket.emit('join_room', { code, name: getLobbyName() });
+}
+
+function hostStart() {
+  socket.emit('start_game');
+}
+
+function copyCode() {
+  if (currentCode) {
+    navigator.clipboard.writeText(currentCode).then(function() {
+      var btn = event.target;
+      btn.textContent = 'KOPYALANDI!';
+      setTimeout(function() { btn.textContent = 'KODU KOPYALA'; }, 1500);
+    });
+  }
+}
+
+function showLobbyError(msg) {
+  var el = document.getElementById('lobbyError');
+  el.textContent = msg; el.style.display = 'block';
+}
+function clearLobbyError() {
+  document.getElementById('lobbyError').style.display = 'none';
+}
+
+function renderLobbyPlayers(players, containerId) {
+  var el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = '';
+  players.forEach(function(p, i) {
+    var d = document.createElement('div');
+    d.style.cssText = 'display:flex;align-items:center;gap:10px;background:var(--card2);border-radius:9px;padding:9px 14px;border:1px solid var(--border);';
+    var dot = p.id === (socket && socket.id) ? ' (Sen)' : '';
+    var hostBadge = p.id === (isHost ? (socket && socket.id) : '') ? ' <span style="font-size:.65rem;background:rgba(255,221,0,.15);color:var(--yellow);padding:2px 7px;border-radius:5px;margin-left:4px;">HOST</span>' : '';
+    d.innerHTML = '<div style="width:9px;height:9px;border-radius:50%;background:' + pColors[i % 4] + ';flex-shrink:0;"></div>' +
+      '<span style="font-weight:700;flex:1;">' + p.name + dot + '</span>' + hostBadge;
+    el.appendChild(d);
+  });
+}
+
+// Bind all socket events
+function bindSocketEvents() {
+
+  socket.on('room_created', function(data) {
+    isHost = true;
+    myId = socket.id;
+    currentCode = data.code;
+    onlinePlayers = data.players;
+    document.getElementById('roomCodeDisp').textContent = data.code;
+    document.getElementById('roomInfo').style.display = 'block';
+    document.getElementById('panelCreate').style.display = 'none';
+    renderLobbyPlayers(data.players, 'lobbyPlayers');
+    updateStartBtn(data.players);
+  });
+
+  socket.on('room_joined', function(data) {
+    myId = socket.id;
+    isHost = false;
+    currentCode = data.code;
+    onlinePlayers = data.players;
+    renderLobbyPlayers(data.players, 'waitPlayers');
+    show('waitScreen');
+  });
+
+  socket.on('players_updated', function(data) {
+    onlinePlayers = data.players;
+    renderLobbyPlayers(data.players, 'lobbyPlayers');
+    renderLobbyPlayers(data.players, 'waitPlayers');
+    updateStartBtn(data.players);
+  });
+
+  socket.on('error', function(msg) {
+    showLobbyError(msg);
+  });
+
+  socket.on('round_start', function(data) {
+    isOnline = true;
+    onlinePlayers = data.players;
+    // Setup game screen for online
+    setupOnlineGame(data);
+    show('gameScreen');
+  });
+
+  socket.on('timer_tick', function(data) {
+    timerLeft = data.left;
+    updateTimerUI();
+  });
+
+  socket.on('hint_opened', function(data) {
+    hintsOpen = data.hintsOpen;
+    if (data.hint) {
+      // Add hint to clues
+      clues.hints[data.hintsOpen - 1] = data.hint;
+    }
+    renderClues();
+    renderHintDots();
+  });
+
+  socket.on('wrong_guess', function(data) {
+    hintsOpen = data.hintsOpen;
+    var myIdx = onlinePlayers.findIndex(function(p) { return p.id === socket.id; });
+    showOnlineFeedback('Yanlis! ' + data.remaining + ' hak kaldi', 'w', myIdx);
+  });
+
+  socket.on('player_eliminated', function(data) {
+    var idx = onlinePlayers.findIndex(function(p) { return p.id === data.id; });
+    var st = document.getElementById('pstatus' + idx);
+    if (st) { st.textContent = 'Elendi!'; st.style.color = 'var(--red)'; }
+    if (data.id === socket.id) {
+      // Lock my input
+      lockMyOnlineInput();
+    }
+  });
+
+  socket.on('round_result', function(data) {
+    clearInterval(timerInt);
+    onlinePlayers = data.players;
+    // Update scores display
+    onlinePlayers.forEach(function(p, i) {
+      var sc = document.getElementById('mpts' + i);
+      if (sc) sc.textContent = p.score;
+    });
+    showOnlineResult(data);
+  });
+
+  socket.on('game_final', function(data) {
+    onlinePlayers = data.players;
+    showOnlineFinal();
+  });
+
+  socket.on('player_left', function(data) {
+    showOnlineFeedback((data.name || 'Bir oyuncu') + ' oyundan ayrildi!', 'w', -1);
+  });
+}
+
+function updateStartBtn(players) {
+  var btn = document.getElementById('startBtn');
+  var msg = document.getElementById('waitMsg');
+  if (!btn) return;
+  if (players.length >= 2) {
+    btn.style.display = 'block';
+    if (msg) msg.style.display = 'none';
+  } else {
+    btn.style.display = 'none';
+    if (msg) msg.style.display = 'block';
+  }
+}
+
+// Online game setup
+var onlineInputsBound = false;
+function setupOnlineGame(data) {
+  // Setup clue structure - server sends always[] and hintsCount
+  hintsOpen = 0;
+  timerLeft = 30;
+  curPlayer = null; // server authoritative
+  clues = {
+    always: data.clues.always,
+    hints: Array(data.clues.hintsCount).fill(null).map(function(_, i) {
+      return { l: ['AYAK','PIYASA','FORMA','LIG'][i], v: '---' };
+    })
+  };
+
+  // Bars
+  document.getElementById('soloBar').style.display = 'none';
+  document.getElementById('multiBar').classList.add('show');
+  document.getElementById('timerWrap').classList.add('show');
+  document.getElementById('soloInput').style.display = 'none';
+  document.getElementById('dualInput').classList.add('show');
+  document.getElementById('dualInput').style.gridTemplateColumns = '';
+
+  // Find my index
+  var myIdx = onlinePlayers.findIndex(function(p) { return p.id === socket.id; });
+
+  // Setup player zones - show all players
+  onlinePlayers.forEach(function(p, i) {
+    document.getElementById('mname' + i).textContent = p.name;
+    document.getElementById('mpts' + i).textContent = p.score;
+    document.getElementById('pzname' + i).textContent = p.name;
+  });
+
+  // Clues
+  renderClues();
+  renderHintDots();
+
+  // Only my input is interactive
+  onlinePlayers.forEach(function(p, i) {
+    var inp = document.getElementById('minput' + i);
+    var btn = document.getElementById('mbtn' + i);
+    var st = document.getElementById('pstatus' + i);
+    if (inp) { inp.value = ''; inp.disabled = (i !== myIdx); }
+    if (btn) { btn.disabled = (i !== myIdx); btn.style.opacity = (i !== myIdx) ? '0.3' : '1'; }
+    if (st) { st.textContent = ''; }
+    document.getElementById('pguess' + i).textContent = '5 tahmin hakki';
+  });
+
+  // Rebind my search
+  if (myIdx >= 0) {
+    setupMSearch(myIdx);
+    // Override onclick for my button only
+    var myBtn = document.getElementById('mbtn' + myIdx);
+    if (myBtn) {
+      myBtn.onclick = function() { onlineGuess(); };
+    }
+  }
+}
+
+function onlineGuess() {
+  var myIdx = onlinePlayers.findIndex(function(p) { return p.id === socket.id; });
+  if (myIdx < 0) return;
+  var inp = document.getElementById('minput' + myIdx);
+  if (!inp || inp.disabled) return;
+  var g = inp.value.trim();
+  if (!g) return;
+  hideSug('mlist' + myIdx);
+  inp.value = '';
+  socket.emit('guess', { guess: g });
+}
+
+function lockMyOnlineInput() {
+  var myIdx = onlinePlayers.findIndex(function(p) { return p.id === socket.id; });
+  if (myIdx < 0) return;
+  var inp = document.getElementById('minput' + myIdx);
+  var btn = document.getElementById('mbtn' + myIdx);
+  if (inp) inp.disabled = true;
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.3'; }
+}
+
+function showOnlineFeedback(msg, type, playerIdx) {
+  if (playerIdx >= 0) {
+    var st = document.getElementById('pstatus' + playerIdx);
+    if (st) {
+      st.textContent = msg;
+      st.style.color = type === 'w' ? 'var(--red)' : 'var(--green)';
+      setTimeout(function() { if (st) { st.textContent = ''; } }, 1800);
+    }
+  }
+}
+
+function showOnlineResult(data) {
+  document.getElementById('rEmoji').innerHTML = data.win ? '&#127881;' : '&#128546;';
+  var rt = document.getElementById('rTitle');
+  if (data.win) {
+    rt.textContent = data.winnerName + ' DOGRU BILDI!';
+    rt.className = 'rt win';
+    document.getElementById('rPts').innerHTML = '+' + data.pts + '<small>' + data.winnerName + ' puan kazandi</small>';
+  } else {
+    rt.textContent = 'KIMSE BILEMEDI!';
+    rt.className = 'rt los';
+    document.getElementById('rPts').innerHTML = '0<small>puan kazanilmadi</small>';
+  }
+  document.getElementById('rAnswer').innerHTML = 'Cevap: <strong>' + data.answer + '</strong>';
+
+  // Replace result buttons for online
+  var rbtns = document.querySelector('#resultScreen .rbtns');
+  if (isHost) {
+    rbtns.innerHTML = '<button class="bn" onclick="onlineNext()">SONRAKI &#9658;</button>' +
+      '<button class="bm" onclick="goMenu()">Bitir</button>';
+  } else {
+    rbtns.innerHTML = '<div style="color:var(--muted);font-size:.85rem;">Host sonraki turu baslatacak...</div>' +
+      '<button class="bm" onclick="goMenu()">Ayril</button>';
+  }
+  show('resultScreen');
+}
+
+function onlineNext() {
+  socket.emit('next_round');
+}
+
+function showOnlineFinal() {
+  var data = onlinePlayers.slice().sort(function(a, b) { return b.score - a.score; });
+  var pod = document.getElementById('podium');
+  pod.innerHTML = '';
+  var ranks = ['1.','2.','3.','4.'];
+  var rCls = ['r1','r2','r3',''];
+  data.forEach(function(p, i) {
+    var row = document.createElement('div');
+    row.className = 'pod';
+    row.innerHTML = '<div class="pod-rank ' + rCls[i] + '">' + ranks[i] + '</div>' +
+      '<div class="pod-name" style="color:' + pColors[i] + '">' + p.name + '</div>' +
+      '<div class="pod-pts" style="color:' + pColors[i] + '">' + p.score + '<small> puan</small></div>';
+    pod.appendChild(row);
+  });
+  var rbtns = document.querySelector('#finalScreen .rbtns');
+  if (isHost) {
+    rbtns.innerHTML = '<button class="bn" onclick="socket.emit('play_again')">TEKRAR</button>' +
+      '<button class="bm" onclick="goMenu()">Cik</button>';
+  } else {
+    rbtns.innerHTML = '<div style="color:var(--muted);font-size:.85rem;">Host tekrar baslatabildigi zaman...</div>' +
+      '<button class="bm" onclick="goMenu()">Ayril</button>';
+  }
+  show('finalScreen');
+}
+
+// Init
+selMode('solo');
+lobbyTab('create');
+
+</script>
+
+<!-- LOBBY SCREEN -->
+<div id="lobbyScreen" class="screen">
+  <div style="position:relative;z-index:2;width:100%;max-width:460px;display:flex;flex-direction:column;align-items:center;gap:14px;">
+
+    <h2 style="font-family:'Barlow Condensed',cursive;font-style:italic;font-weight:900;font-size:2.8rem;letter-spacing:2px;
+      background:linear-gradient(90deg,#00ff88,#3d8eff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+      ONLINE ODA
+    </h2>
+
+    <!-- Name input -->
+    <div style="width:100%;">
+      <div class="mlabel">Adın</div>
+      <input id="onlineName" class="ni" type="text" placeholder="Adını gir..." autocomplete="off"
+        style="width:100%;margin-top:6px;">
+    </div>
+
+    <!-- Tabs -->
+    <div style="display:flex;gap:0;width:100%;border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+      <button id="tabCreate" onclick="lobbyTab('create')"
+        style="flex:1;padding:12px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.85rem;
+        background:var(--green);color:#000;border:none;cursor:pointer;transition:.2s;">
+        ODA OLUŞTUR
+      </button>
+      <button id="tabJoin" onclick="lobbyTab('join')"
+        style="flex:1;padding:12px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.85rem;
+        background:var(--card2);color:var(--muted);border:none;cursor:pointer;transition:.2s;">
+        ODAYA KATIL
+      </button>
+    </div>
+
+    <!-- Create panel -->
+    <div id="panelCreate" style="width:100%;display:flex;flex-direction:column;gap:10px;">
+      <button onclick="createRoom()"
+        style="width:100%;padding:15px;font-family:'Barlow Condensed',cursive;font-style:italic;
+        font-weight:900;font-size:1.4rem;letter-spacing:2px;
+        background:linear-gradient(135deg,var(--green),#00ccaa);color:#000;
+        border:none;border-radius:12px;cursor:pointer;box-shadow:0 8px 28px rgba(0,255,136,.25);">
+        ODA OLUŞTUR &#9658;
+      </button>
+    </div>
+
+    <!-- Join panel -->
+    <div id="panelJoin" style="width:100%;display:none;flex-direction:column;gap:10px;">
+      <input id="joinCode" class="ni" type="text" placeholder="Oda kodu (örn: AB3KZ)"
+        autocomplete="off" autocorrect="off" autocapitalize="characters"
+        style="width:100%;text-align:center;font-family:'Bebas Neue',cursive;font-size:1.6rem;letter-spacing:6px;">
+      <button onclick="joinRoom()"
+        style="width:100%;padding:15px;font-family:'Barlow Condensed',cursive;font-style:italic;
+        font-weight:900;font-size:1.4rem;letter-spacing:2px;
+        background:linear-gradient(135deg,var(--blue),#2255cc);color:#fff;
+        border:none;border-radius:12px;cursor:pointer;">
+        KATIL &#9658;
+      </button>
+    </div>
+
+    <!-- Room info (after create) -->
+    <div id="roomInfo" style="display:none;width:100%;background:var(--card);border:1px solid var(--border);
+      border-radius:14px;padding:18px;">
+      <div style="text-align:center;margin-bottom:14px;">
+        <div style="font-size:.65rem;letter-spacing:4px;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">Oda Kodu</div>
+        <div id="roomCodeDisp" style="font-family:'Bebas Neue',cursive;font-size:3rem;
+          color:var(--green);letter-spacing:8px;line-height:1;"></div>
+        <button onclick="copyCode()" style="margin-top:8px;background:rgba(0,255,136,.1);
+          border:1px solid rgba(0,255,136,.25);color:var(--green);border-radius:8px;
+          padding:6px 16px;font-size:.75rem;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:700;">
+          KODU KOPYALA
+        </button>
+      </div>
+      <div style="font-size:.65rem;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Oyuncular</div>
+      <div id="lobbyPlayers" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;"></div>
+      <button id="startBtn" onclick="hostStart()" style="display:none;width:100%;padding:13px;
+        font-family:'Barlow Condensed',cursive;font-style:italic;font-weight:900;font-size:1.3rem;
+        background:linear-gradient(135deg,var(--green),#00ccaa);color:#000;
+        border:none;border-radius:11px;cursor:pointer;">
+        OYUNU BAŞLAT &#9658;
+      </button>
+      <div id="waitMsg" style="text-align:center;font-size:.8rem;color:var(--muted);">
+        Arkadaşının katılması bekleniyor...
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div id="lobbyError" style="display:none;padding:10px 16px;border-radius:10px;
+      background:rgba(255,34,85,.1);border:1px solid rgba(255,34,85,.25);
+      color:#ff6080;font-size:.85rem;text-align:center;width:100%;"></div>
+
+    <button onclick="goMenu()" style="background:none;border:none;color:var(--muted);
+      cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.82rem;margin-top:4px;">
+      ← Ana Menü
+    </button>
+  </div>
+</div>
+
+<!-- ONLINE WAIT SCREEN (joined, waiting for host to start) -->
+<div id="waitScreen" class="screen">
+  <div style="text-align:center;max-width:400px;">
+    <div style="font-size:3rem;animation:spin 3s linear infinite;display:inline-block;margin-bottom:16px;">&#9917;</div>
+    <h2 style="font-family:'Barlow Condensed',cursive;font-style:italic;font-weight:900;font-size:2.2rem;
+      color:var(--green);margin-bottom:8px;">HAZIR!</h2>
+    <p style="color:var(--muted);margin-bottom:20px;">Host oyunu başlatana kadar bekle...</p>
+    <div id="waitPlayers" style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px;"></div>
+    <button onclick="goMenu()" style="background:none;border:1px solid var(--border);color:var(--muted);
+      border-radius:10px;padding:10px 20px;cursor:pointer;font-family:'DM Sans',sans-serif;">
+      Ayril
+    </button>
+  </div>
+</div>
+
+<!-- ONLINE RESULT overlay additions handled in JS -->
+
+</body>
+</html>
