@@ -1077,12 +1077,13 @@ function hostStart() {
   socket.emit('start_game');
 }
 
-function copyCode() {
+function copyCode(btn) {
   if (currentCode) {
     navigator.clipboard.writeText(currentCode).then(function() {
-      var btn = event.target;
       btn.textContent = 'KOPYALANDI!';
       setTimeout(function() { btn.textContent = 'KODU KOPYALA'; }, 1500);
+    }).catch(function() {
+      btn.textContent = currentCode;
     });
   }
 }
@@ -1467,7 +1468,7 @@ function onlinePlayAgain() {
         <div style="font-size:.65rem;letter-spacing:4px;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">Oda Kodu</div>
         <div id="roomCodeDisp" style="font-family:'Bebas Neue',cursive;font-size:3rem;
           color:var(--green);letter-spacing:8px;line-height:1;"></div>
-        <button onclick="copyCode()" style="margin-top:8px;background:rgba(0,255,136,.1);
+        <button onclick="copyCode(this)" style="margin-top:8px;background:rgba(0,255,136,.1);
           border:1px solid rgba(0,255,136,.25);color:var(--green);border-radius:8px;
           padding:6px 16px;font-size:.75rem;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:700;">
           KODU KOPYALA
