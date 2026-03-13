@@ -9,7 +9,7 @@ const io = new Server(server, {
   cors: { origin: '*' }
 });
 
-// Set permissive CSP for Socket.io to work
+// Headers
 app.use((req, res, next) => {
   res.setHeader('Content-Security-Policy',
     "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; " +
@@ -17,6 +17,8 @@ app.use((req, res, next) => {
     "connect-src * ws: wss:; " +
     "style-src * 'unsafe-inline';"
   );
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
   next();
 });
 
