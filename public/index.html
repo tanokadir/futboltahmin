@@ -251,14 +251,30 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'DM
       </div>
     </div>
     <div class="nsec" id="nsec">
-      <div class="mlabel">Oyuncu Adlari</div>
-      <div class="niw">
-        <div class="nav na0">A</div>
-        <input class="ni" id="pname0" type="text" placeholder="1. Oyuncu" autocomplete="off">
+      <div class="mlabel" style="margin-bottom:8px;">OYUNCU SAYISI</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
+        <button class="rcBtn sel" id="pc2" onclick="selPlayerCount(2)">2 KiSi</button>
+        <button class="rcBtn" id="pc3" onclick="selPlayerCount(3)">3 KiSi</button>
+        <button class="rcBtn" id="pc4" onclick="selPlayerCount(4)">4 KiSi</button>
       </div>
-      <div class="niw">
-        <div class="nav na1">B</div>
-        <input class="ni" id="pname1" type="text" placeholder="2. Oyuncu" autocomplete="off">
+      <div class="mlabel" style="margin-bottom:8px;">OYUNCU ADLARI</div>
+      <div id="pnameInputs">
+        <div class="niw">
+          <div class="nav na0">A</div>
+          <input class="ni" id="pname0" type="text" placeholder="1. Oyuncu" autocomplete="off">
+        </div>
+        <div class="niw">
+          <div class="nav na1">B</div>
+          <input class="ni" id="pname1" type="text" placeholder="2. Oyuncu" autocomplete="off">
+        </div>
+        <div class="niw" id="prow2" style="display:none;">
+          <div class="nav" style="background:rgba(255,107,0,.15);color:var(--orange);">C</div>
+          <input class="ni" id="pname2" type="text" placeholder="3. Oyuncu" autocomplete="off">
+        </div>
+        <div class="niw" id="prow3" style="display:none;">
+          <div class="nav" style="background:rgba(255,221,0,.15);color:var(--yellow);">D</div>
+          <input class="ni" id="pname3" type="text" placeholder="4. Oyuncu" autocomplete="off">
+        </div>
       </div>
     </div>
     <div style="width:100%;margin-bottom:10px;">
@@ -298,7 +314,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'DM
 
   <!-- Multi bar -->
   <div class="multi-bar" id="multiBar">
-    <div class="multi-scores">
+    <div class="multi-scores" id="multiScores">
       <div class="ms-player">
         <div class="ms-name" id="mname0" style="color:var(--green)"></div>
         <div class="ms-pts" id="mpts0" style="color:var(--green)">0</div>
@@ -307,6 +323,14 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'DM
       <div class="ms-player right">
         <div class="ms-name" id="mname1" style="color:var(--blue)"></div>
         <div class="ms-pts" id="mpts1" style="color:var(--blue)">0</div>
+      </div>
+      <div class="ms-player" id="mscore2" style="display:none;">
+        <div class="ms-name" id="mname2" style="color:var(--orange)"></div>
+        <div class="ms-pts" id="mpts2" style="color:var(--orange)">0</div>
+      </div>
+      <div class="ms-player" id="mscore3" style="display:none;">
+        <div class="ms-name" id="mname3" style="color:var(--yellow)"></div>
+        <div class="ms-pts" id="mpts3" style="color:var(--yellow)">0</div>
       </div>
     </div>
   </div>
@@ -363,6 +387,26 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'DM
       <button class="bg" id="mbtn1" onclick="multiGuess(1)" style="width:100%">TAHMIN</button>
       <div class="pzone-guesses" id="pguess1">5 tahmin hakki</div>
       <div class="pzone-status" id="pstatus1"></div>
+    </div>
+    <div class="pzone" id="pzone2" style="display:none;">
+      <div class="pzone-name" id="pzname2" style="color:var(--orange)"></div>
+      <div class="swrap">
+        <input id="minput2" class="sinput" type="text" placeholder="Tahmin..." autocomplete="off" autocorrect="off">
+        <div id="mlist2" class="slist"></div>
+      </div>
+      <button class="bg" id="mbtn2" onclick="multiGuess(2)" style="width:100%">TAHMIN</button>
+      <div class="pzone-guesses" id="pguess2">5 tahmin hakki</div>
+      <div class="pzone-status" id="pstatus2"></div>
+    </div>
+    <div class="pzone" id="pzone3" style="display:none;">
+      <div class="pzone-name" id="pzname3" style="color:var(--yellow)"></div>
+      <div class="swrap">
+        <input id="minput3" class="sinput" type="text" placeholder="Tahmin..." autocomplete="off" autocorrect="off">
+        <div id="mlist3" class="slist"></div>
+      </div>
+      <button class="bg" id="mbtn3" onclick="multiGuess(3)" style="width:100%">TAHMIN</button>
+      <div class="pzone-guesses" id="pguess3">5 tahmin hakki</div>
+      <div class="pzone-status" id="pstatus3"></div>
     </div>
   </div>
 
@@ -573,6 +617,21 @@ function selMode(m) {
   document.getElementById('nsec').classList.remove('show');
 }
 
+var localPlayerCount = 2;
+
+function selPlayerCount(n) {
+  localPlayerCount = n;
+  [2,3,4].forEach(function(i) {
+    var btn = document.getElementById('pc' + i);
+    if (btn) btn.classList.toggle('sel', i === n);
+  });
+  // Show/hide rows
+  var row2 = document.getElementById('prow2');
+  var row3 = document.getElementById('prow3');
+  if (row2) row2.style.display = n >= 3 ? 'flex' : 'none';
+  if (row3) row3.style.display = n >= 4 ? 'flex' : 'none';
+}
+
 function selRounds(n) {
   ROUNDS = n;
   [7,10,15].forEach(function(r) {
@@ -583,11 +642,24 @@ function selRounds(n) {
 
 function startGame() {
   if (gameMode === 'multi') {
-    var n0 = document.getElementById('pname0').value.trim();
-    var n1 = document.getElementById('pname1').value.trim();
-    pNames = [n0 || '1. Oyuncu', n1 || '2. Oyuncu'];
-    scores = [0, 0];
+    pNames = [];
+    scores = [];
+    for (var i = 0; i < localPlayerCount; i++) {
+      var inp = document.getElementById('pname' + i);
+      pNames.push((inp && inp.value.trim()) ? inp.value.trim() : (i+1) + '. Oyuncu');
+      scores.push(0);
+    }
     roundsPlayed = 0;
+    // Show/hide player zones
+    for (var i = 0; i < 4; i++) {
+      var zone = document.getElementById('pzone' + i);
+      var ms = document.getElementById('mscore' + i);
+      if (zone) zone.style.display = i < localPlayerCount ? '' : 'none';
+      if (ms) ms.style.display = i < localPlayerCount ? '' : 'none';
+    }
+    // Adjust dualInput grid
+    var di = document.getElementById('dualInput');
+    if (di) di.style.gridTemplateColumns = localPlayerCount === 4 ? '1fr 1fr' : localPlayerCount === 3 ? '1fr 1fr 1fr' : '1fr 1fr';
   } else {
     pNames = ['Sen'];
     scores = [0];
@@ -623,8 +695,8 @@ function loadRound() {
   clues = buildClues(curPlayer);
   hintsOpen = 0;
   soloWrong = 0;
-  mWrong = [0, 0];
-  mDone = [false, false];
+  mWrong = pNames.map(function() { return 0; });
+  mDone = pNames.map(function() { return false; });
   mSolved = false;
 
   renderClues();
@@ -663,6 +735,10 @@ function loadRound() {
       if(_btn) { _btn.disabled = false; _btn.style.opacity = '1'; }
       var _st = document.getElementById('pstatus' + i); if(_st) _st.textContent = '';
       var _gs = document.getElementById('pguess' + i); if(_gs) _gs.textContent = '5 tahmin hakki';
+      // Show correct pzone
+      var _zone = document.getElementById('pzone' + i); if(_zone) _zone.style.display = '';
+      // Show score in multiBar
+      var _ms = document.getElementById('mscore' + i); if(_ms) _ms.style.display = '';
       setupMSearch(i);
     }
     startTimer();
@@ -744,7 +820,7 @@ function updateTimerUI() {
 
 function timeUp() {
   lockAll();
-  for (var i = 0; i < 2; i++) {
+  for (var i = 0; i < pNames.length; i++) {
     if (!mDone[i]) {
       var st = document.getElementById('pstatus' + i);
       if (st) { st.textContent = 'Sure doldu!'; st.style.color = 'var(--red)'; }
@@ -754,7 +830,7 @@ function timeUp() {
 }
 
 function lockAll() {
-  for (var i = 0; i < 2; i++) lockPlayer(i);
+  for (var i = 0; i < pNames.length; i++) lockPlayer(i);
 }
 
 function lockPlayer(i) {
@@ -880,7 +956,7 @@ function multiGuess(idx) {
       lockPlayer(idx);
       if (st) { st.textContent = '5 hakki bitti!'; st.style.color = 'var(--red)'; }
       if (gEl) { gEl.textContent = 'Elendi'; }
-      if (mDone[0] && mDone[1]) {
+      if (mDone.every(function(d) { return d; })) {
         clearInterval(timerInt);
         setTimeout(function() { showResult(false, -1, 0); }, 800);
       }
